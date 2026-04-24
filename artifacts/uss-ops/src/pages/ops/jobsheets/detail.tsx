@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 export default function JobsheetDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: js, isLoading } = useGetJobsheet({ id: parseInt(id) });
+  const { data: js, isLoading } = useGetJobsheet(parseInt(id));
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading...</div>;
   if (!js) return <div className="p-8 text-red-600">Jobsheet not found.</div>;

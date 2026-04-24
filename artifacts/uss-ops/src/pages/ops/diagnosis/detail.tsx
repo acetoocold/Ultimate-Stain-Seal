@@ -17,17 +17,17 @@ const CONDITION_COLOR: Record<string, string> = {
 
 export default function DiagnosisDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: diagnosis, isLoading } = useGetDiagnosis({ id: parseInt(id) });
+  const { data: diagnosis, isLoading } = useGetDiagnosis(parseInt(id));
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading...</div>;
   if (!diagnosis) return <div className="p-8 text-red-600">Diagnosis not found.</div>;
 
-  const issues: string[] = [];
-  if (diagnosis.mildewPresent) issues.push("Mildew present");
-  if (diagnosis.grayingPresent) issues.push("Surface graying");
-  if (diagnosis.crackingPresent) issues.push("Cracking/splitting");
-  if (diagnosis.looseBoards) issues.push("Loose boards");
-  if (diagnosis.rotPresent) issues.push("Rot present");
+  const conditions: { key: string; label: string; value: boolean | null | undefined }[] = [
+    { key: "moldMildew", label: "Mold / Mildew", value: diagnosis.moldMildew },
+    { key: "graying", label: "Surface Graying", value: diagnosis.graying },
+    { key: "cracking", label: "Cracking / Splitting", value: diagnosis.cracking },
+    { key: "repairNeeded", label: "Repair Needed", value: diagnosis.repairNeeded },
+  ];
 
   return (
     <div className="space-y-6">
@@ -62,9 +62,9 @@ export default function DiagnosisDetail() {
             <div><span className="text-xs text-muted-foreground block">Total Sq Ft</span><p className="text-sm font-medium">{diagnosis.totalSqFt ?? "—"}</p></div>
             <div><span className="text-xs text-muted-foreground block">Gates</span><p className="text-sm font-medium">{diagnosis.numberOfGates ?? 0}</p></div>
             <div><span className="text-xs text-muted-foreground block">Posts</span><p className="text-sm font-medium">{diagnosis.numberOfPosts ?? 0}</p></div>
-            <div><span className="text-xs text-muted-foreground block">Fence Age</span><p className="text-sm font-medium">{diagnosis.fenceAge ? `${diagnosis.fenceAge} yrs` : "—"}</p></div>
+            <div><span className="text-xs text-muted-foreground block">Last Stained</span><p className="text-sm font-medium">{diagnosis.lastStainedYear ? `${diagnosis.lastStainedYear}` : "—"}</p></div>
             <div><span className="text-xs text-muted-foreground block">Fence Type</span><p className="text-sm font-medium capitalize">{diagnosis.fenceType}</p></div>
-            <div><span className="text-xs text-muted-foreground block">Moisture</span><p className="text-sm font-medium capitalize">{diagnosis.surfaceMoisture ?? "—"}</p></div>
+            <div><span className="text-xs text-muted-foreground block">Moisture</span><p className="text-sm font-medium capitalize">{diagnosis.moistureLevel ?? "—"}</p></div>
           </CardContent>
         </Card>
 
@@ -75,27 +75,22 @@ export default function DiagnosisDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Previously Stained:</span>
-              <Badge variant={diagnosis.previouslyStained ? "default" : "secondary"}>{diagnosis.previouslyStained ? "Yes" : "No"}</Badge>
-            </div>
-            {diagnosis.previouslyStained && (
-              <div><span className="text-xs text-muted-foreground block">Previous Product</span><p className="text-sm">{diagnosis.previousProduct ?? "—"}</p></div>
+            {diagnosis.currentFinish && (
+              <div><span className="text-xs text-muted-foreground block">Current Finish</span><p className="text-sm">{diagnosis.currentFinish}</p></div>
             )}
             <Separator className="my-2" />
             <div className="space-y-1.5">
-              {["mildewPresent", "grayingPresent", "crackingPresent", "looseBoards", "rotPresent"].map(key => {
-                const val = (diagnosis as any)[key];
-                const label = key.replace("Present", "").replace("loose", "Loose ").replace(/([A-Z])/g, " $1").trim();
-                return (
-                  <div key={key} className="flex items-center gap-2">
-                    {val ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> : <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
-                    <span className="text-sm capitalize">{label}</span>
-                    <Badge variant={val ? "destructive" : "outline"} className="text-xs ml-auto">{val ? "Yes" : "No"}</Badge>
-                  </div>
-                );
-              })}
+              {conditions.map(({ key, label, value }) => (
+                <div key={key} className="flex items-center gap-2">
+                  {value ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> : <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
+                  <span className="text-sm">{label}</span>
+                  <Badge variant={value ? "destructive" : "outline"} className="text-xs ml-auto">{value ? "Yes" : "No"}</Badge>
+                </div>
+              ))}
             </div>
+            {diagnosis.repairNotes && (
+              <div className="pt-2"><span className="text-xs text-muted-foreground block">Repair Notes</span><p className="text-sm">{diagnosis.repairNotes}</p></div>
+            )}
           </CardContent>
         </Card>
 
@@ -104,14 +99,12 @@ export default function DiagnosisDetail() {
             <CardTitle className="text-base flex items-center gap-2"><Wrench className="w-4 h-4" />Recommendation</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div><span className="text-xs text-muted-foreground block">Treatment</span><p className="text-sm font-medium capitalize">{diagnosis.recommendedTreatment?.replace("_", " ") ?? "—"}</p></div>
+            {diagnosis.prepRequired && (
+              <div><span className="text-xs text-muted-foreground block">Prep Required</span><p className="text-sm capitalize">{diagnosis.prepRequired}</p></div>
+            )}
             <div><span className="text-xs text-muted-foreground block">Product</span><p className="text-sm font-medium">{diagnosis.recommendedProduct ?? "—"}</p></div>
             <div><span className="text-xs text-muted-foreground block">Coats</span><p className="text-sm font-medium">{diagnosis.recommendedCoats ?? "—"}</p></div>
-            <div><span className="text-xs text-muted-foreground block">Disclaimer Mode</span>
-              <Badge variant={diagnosis.disclaimerMode === "hard" ? "destructive" : "outline"} className="text-xs mt-0.5 capitalize">
-                {diagnosis.disclaimerMode ?? "none"}
-              </Badge>
-            </div>
+            <div><span className="text-xs text-muted-foreground block">Weather Exposure</span><p className="text-sm capitalize">{diagnosis.weatherExposure ?? "—"}</p></div>
           </CardContent>
         </Card>
       </div>
@@ -129,10 +122,10 @@ export default function DiagnosisDetail() {
           </CardContent>
         </Card>
 
-        {diagnosis.notes && (
+        {diagnosis.careNotes && (
           <Card>
             <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
-            <CardContent><p className="text-sm text-muted-foreground">{diagnosis.notes}</p></CardContent>
+            <CardContent><p className="text-sm text-muted-foreground">{diagnosis.careNotes}</p></CardContent>
           </Card>
         )}
       </div>

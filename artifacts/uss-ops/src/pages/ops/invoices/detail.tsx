@@ -19,7 +19,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: invoice, isLoading } = useGetInvoice({ id: parseInt(id) });
+  const { data: invoice, isLoading } = useGetInvoice(parseInt(id));
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading invoice...</div>;
   if (!invoice) return <div className="p-8 text-red-600">Invoice not found.</div>;
@@ -129,7 +129,7 @@ export default function InvoiceDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">{invoice.softDisclaimerText ?? invoice.disclaimerText ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">{invoice.disclaimerText ?? "—"}</p>
                 {invoice.disclaimerMode === "hard" && (
                   <div className="mt-4 p-3 border border-dashed rounded-md">
                     <p className="text-xs text-muted-foreground">Customer Signature: {invoice.signedAt ? `Signed ${format(new Date(invoice.signedAt), "MMM d, yyyy")}` : "Not yet signed"}</p>

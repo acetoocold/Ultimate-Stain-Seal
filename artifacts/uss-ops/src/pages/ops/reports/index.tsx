@@ -57,13 +57,13 @@ export default function ReportsDashboard() {
         />
         <StatCard
           title="Avg. Project Value"
-          value={`$${(summary?.averageProjectValue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          value={`$${(summary?.averageJobValue ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
           sub="Paid invoices"
           icon={Award}
         />
         <StatCard
           title="Active Customers"
-          value={summary?.activeCustomers ?? 0}
+          value={summary?.totalCustomers ?? 0}
           sub={`${summary?.totalCustomers ?? 0} total`}
           icon={Users}
         />

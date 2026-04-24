@@ -24,7 +24,7 @@ function StatCard({ title, value, sub, icon: Icon, accent }: { title: string; va
 export default function OpsDashboard() {
   const { data: summary, isLoading } = useGetDashboardSummary();
   const { data: recentActivity } = useGetDashboardRecentActivity({ limit: 8 });
-  const { data: upcomingJobs } = useGetDashboardUpcomingJobs({ limit: 5 });
+  const { data: upcomingJobs } = useGetDashboardUpcomingJobs({ days: 14 });
   const { data: overdueInvoices } = useGetDashboardOverdueInvoices();
 
   return (
@@ -45,18 +45,18 @@ export default function OpsDashboard() {
           <StatCard
             title="Active Projects"
             value={summary?.activeProjects ?? 0}
-            sub={`${summary?.pendingProjects ?? 0} pending`}
+            sub={`${summary?.activeProjects ?? 0} active`}
             icon={Briefcase}
           />
           <StatCard
             title="Revenue This Month"
-            value={`$${((summary?.monthRevenue ?? 0)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-            sub={`$${((summary?.ytdRevenue ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })} YTD`}
+            value={`$${((summary?.thisMonthRevenue ?? 0)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+            sub={`$${((summary?.totalRevenue ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })} total`}
             icon={TrendingUp}
           />
           <StatCard
             title="Outstanding Balance"
-            value={`$${((summary?.totalOutstanding ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            value={`$${((summary?.unpaidBalance ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             sub="Unpaid invoices"
             icon={DollarSign}
           />

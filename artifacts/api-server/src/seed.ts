@@ -1,4 +1,4 @@
-import { db, usersTable, customersTable, propertiesTable, projectsTable, diagnosesTable, invoicesTable, invoiceLineItemsTable, paymentsTable, jobsTable, materialsTable, inventoryItemsTable, activityTable, settingsTable, pricingRulesTable } from "@workspace/db";
+import { db, usersTable, customersTable, propertiesTable, projectsTable, diagnosesTable, invoicesTable, invoiceLineItemsTable, paymentsTable, jobsTable, jobsheetsTable, materialsTable, inventoryItemsTable, activityTable, settingsTable, pricingRulesTable, documentsTable } from "@workspace/db";
 import { createHash } from "crypto";
 
 function hashPassword(password: string): string {
@@ -8,13 +8,11 @@ function hashPassword(password: string): string {
 async function seed() {
   console.log("Seeding database...");
 
-  // Settings
   const existingSettings = await db.select().from(settingsTable).limit(1);
-  let settings;
   if (existingSettings.length === 0) {
-    [settings] = await db.insert(settingsTable).values({
+    await db.insert(settingsTable).values({
       companyName: "Ultimate Stain & Seal",
-      companyPhone: "(555) 867-5309",
+      companyPhone: "(512) 867-5309",
       companyEmail: "ops@ultimatestainnseal.com",
       companyAddress: "1247 Woodcraft Lane, Austin, TX 78701",
       defaultTaxRate: "0.0825",
@@ -24,547 +22,194 @@ async function seed() {
       hardDisclaimerText: "DISCLAIMER: Customer acknowledges that wood surfaces expand and contract naturally with temperature and humidity changes. USS provides no warranty for color matching on previously stained wood. This invoice constitutes an agreement between USS and the customer. Customer signature is required before work begins.",
       invoicePrefix: "USS",
       glideEnabled: false,
-    }).returning();
+    });
     console.log("  Settings created");
   }
 
-  // Admin user
   const existingAdmin = await db.select().from(usersTable).limit(1);
-  let adminUser;
+  let adminUser: typeof usersTable.$inferSelect;
   if (existingAdmin.length === 0) {
-    [adminUser] = await db.insert(usersTable).values({
-      email: "admin@ussops.com",
-      passwordHash: hashPassword("admin123"),
-      firstName: "Chad",
-      lastName: "Morrison",
-      role: "admin",
-      phone: "(555) 100-0001",
-      isActive: true,
-    }).returning();
-
-    await db.insert(usersTable).values([
-      {
-        email: "sarah@ussops.com",
-        passwordHash: hashPassword("sarah123"),
-        firstName: "Sarah",
-        lastName: "Jenkins",
-        role: "office",
-        phone: "(555) 100-0002",
-        isActive: true,
-      },
-      {
-        email: "mike@ussops.com",
-        passwordHash: hashPassword("mike123"),
-        firstName: "Mike",
-        lastName: "Torres",
-        role: "crew",
-        phone: "(555) 100-0003",
-        isActive: true,
-      },
-    ]);
+    const users = await db.insert(usersTable).values([
+      { email: "admin@ussops.com", passwordHash: hashPassword("admin123"), firstName: "Chad", lastName: "Morrison", role: "admin", phone: "(512) 100-0001", isActive: true },
+      { email: "sarah@ussops.com", passwordHash: hashPassword("sarah123"), firstName: "Sarah", lastName: "Jenkins", role: "office", phone: "(512) 100-0002", isActive: true },
+      { email: "mike@ussops.com", passwordHash: hashPassword("mike123"), firstName: "Mike", lastName: "Torres", role: "crew", phone: "(512) 100-0003", isActive: true },
+      { email: "derek@ussops.com", passwordHash: hashPassword("derek123"), firstName: "Derek", lastName: "Hall", role: "crew", phone: "(512) 100-0004", isActive: true },
+    ]).returning();
+    adminUser = users[0];
     console.log("  Users created");
   } else {
     adminUser = existingAdmin[0];
   }
 
-  // Pricing rules
   const existingRules = await db.select().from(pricingRulesTable).limit(1);
   if (existingRules.length === 0) {
     await db.insert(pricingRulesTable).values([
-      {
-        name: "Cedar Fence - Stain & Seal",
-        serviceType: "stain_seal",
-        fenceType: "cedar",
-        pricePerSqFt: "0.65",
-        minimumCharge: "350.00",
-        laborRatePerHour: "45.00",
-        notes: "Standard cedar panel stain & seal. Both sides included.",
-        isActive: true,
-      },
-      {
-        name: "Pressure Treated - Stain & Seal",
-        serviceType: "stain_seal",
-        fenceType: "pressure_treated",
-        pricePerSqFt: "0.55",
-        minimumCharge: "300.00",
-        laborRatePerHour: "45.00",
-        notes: "PT lumber. Must be dried minimum 6 months before staining.",
-        isActive: true,
-      },
-      {
-        name: "Cedar Fence - Seal Only",
-        serviceType: "seal",
-        fenceType: "cedar",
-        pricePerSqFt: "0.40",
-        minimumCharge: "250.00",
-        laborRatePerHour: "45.00",
-        notes: "Clear seal only, no colorant.",
-        isActive: true,
-      },
-      {
-        name: "Gate - Standard",
-        serviceType: "stain_seal",
-        fenceType: "gate",
-        pricePerSqFt: null,
-        minimumCharge: "75.00",
-        laborRatePerHour: "45.00",
-        notes: "Per gate, standard size (4x7 ft). Includes both sides.",
-        isActive: true,
-      },
+      { name: "Cedar Fence - Stain & Seal", serviceType: "stain_seal", fenceType: "cedar", pricePerSqFt: "0.65", minimumCharge: "350.00", laborRatePerHour: "45.00", notes: "Standard cedar panel stain & seal. Both sides included.", isActive: true },
+      { name: "Pressure Treated - Stain & Seal", serviceType: "stain_seal", fenceType: "pressure_treated", pricePerSqFt: "0.55", minimumCharge: "300.00", laborRatePerHour: "45.00", notes: "PT lumber. Must be dried minimum 6 months before staining.", isActive: true },
+      { name: "Cedar Fence - Seal Only", serviceType: "seal", fenceType: "cedar", pricePerSqFt: "0.40", minimumCharge: "250.00", laborRatePerHour: "45.00", notes: "Clear seal only, no colorant.", isActive: true },
+      { name: "Gate - Standard", serviceType: "stain_seal", fenceType: "gate", pricePerSqFt: null, minimumCharge: "75.00", laborRatePerHour: "45.00", notes: "Per gate, standard size (4x7 ft). Includes both sides.", isActive: true },
+      { name: "Redwood - Stain & Seal", serviceType: "stain_seal", fenceType: "redwood", pricePerSqFt: "0.75", minimumCharge: "400.00", laborRatePerHour: "50.00", notes: "Redwood premium. Color match critical.", isActive: true },
+      { name: "Power Wash Only", serviceType: "power_wash", fenceType: "cedar", pricePerSqFt: "0.18", minimumCharge: "150.00", laborRatePerHour: "40.00", notes: "Surface prep only. No stain.", isActive: true },
     ]);
     console.log("  Pricing rules created");
   }
 
-  // Materials
   const existingMaterials = await db.select().from(materialsTable).limit(1);
-  let material1: typeof materialsTable.$inferSelect;
+  let allMaterials: typeof materialsTable.$inferSelect[] = [];
   if (existingMaterials.length === 0) {
-    const mats = await db.insert(materialsTable).values([
-      {
-        name: "TWP 100 Series Cedar Stain",
-        sku: "TWP-101",
-        category: "stain",
-        brand: "TWP",
-        description: "Total Wood Preservative cedar tone, 1 gallon",
-        unitType: "gallon",
-        unitCost: "42.00",
-        retailPrice: "54.99",
-        homeDepotPrice: "49.99",
-        coveragePerUnit: "100",
-        coverageUnit: "sq_ft",
-        isActive: true,
-      },
-      {
-        name: "TWP 100 Series Rustic Oak",
-        sku: "TWP-115",
-        category: "stain",
-        brand: "TWP",
-        description: "Total Wood Preservative rustic oak tone, 1 gallon",
-        unitType: "gallon",
-        unitCost: "42.00",
-        retailPrice: "54.99",
-        homeDepotPrice: "49.99",
-        coveragePerUnit: "100",
-        coverageUnit: "sq_ft",
-        isActive: true,
-      },
-      {
-        name: "Armstrong Clark Cedar Naturaltone",
-        sku: "AC-NC",
-        category: "stain",
-        brand: "Armstrong Clark",
-        description: "Semi-transparent cedar naturaltone, 1 gallon",
-        unitType: "gallon",
-        unitCost: "38.00",
-        retailPrice: "52.99",
-        homeDepotSku: "1234567",
-        coveragePerUnit: "150",
-        coverageUnit: "sq_ft",
-        isActive: true,
-      },
-      {
-        name: "Defy Extreme Wood Stain",
-        sku: "DEFY-EXT",
-        category: "stain",
-        brand: "Defy",
-        description: "Water-based semi-transparent, 1 gallon",
-        unitType: "gallon",
-        unitCost: "35.00",
-        retailPrice: "49.99",
-        coveragePerUnit: "75",
-        coverageUnit: "sq_ft",
-        isActive: true,
-      },
-      {
-        name: "Purdy Brush 4in",
-        sku: "PURDY-4",
-        category: "equipment",
-        brand: "Purdy",
-        description: "4 inch natural bristle brush for stain application",
-        unitType: "each",
-        unitCost: "14.00",
-        retailPrice: "18.99",
-        isActive: true,
-      },
-      {
-        name: "Chapin Pump Sprayer 2gal",
-        sku: "CHAPIN-2G",
-        category: "equipment",
-        brand: "Chapin",
-        description: "2 gallon pump sprayer for stain application",
-        unitType: "each",
-        unitCost: "28.00",
-        retailPrice: "34.99",
-        isActive: true,
-      },
+    allMaterials = await db.insert(materialsTable).values([
+      { name: "TWP 100 Series Cedar Stain", sku: "TWP-101", category: "stain", brand: "TWP", description: "Total Wood Preservative cedar tone, 1 gallon", unitType: "gallon", unitCost: "42.00", retailPrice: "54.99", homeDepotPrice: "49.99", coveragePerUnit: "100", coverageUnit: "sq_ft", isActive: true },
+      { name: "TWP 100 Series Rustic Oak", sku: "TWP-115", category: "stain", brand: "TWP", description: "Total Wood Preservative rustic oak tone, 1 gallon", unitType: "gallon", unitCost: "42.00", retailPrice: "54.99", homeDepotPrice: "49.99", coveragePerUnit: "100", coverageUnit: "sq_ft", isActive: true },
+      { name: "Armstrong Clark Cedar Naturaltone", sku: "AC-NC", category: "stain", brand: "Armstrong Clark", description: "Semi-transparent cedar naturaltone, 1 gallon", unitType: "gallon", unitCost: "38.00", retailPrice: "52.99", coveragePerUnit: "150", coverageUnit: "sq_ft", isActive: true },
+      { name: "Defy Extreme Wood Stain", sku: "DEFY-EXT", category: "stain", brand: "Defy", description: "Water-based semi-transparent, 1 gallon", unitType: "gallon", unitCost: "35.00", retailPrice: "49.99", coveragePerUnit: "75", coverageUnit: "sq_ft", isActive: true },
+      { name: "Purdy Brush 4in", sku: "PURDY-4", category: "equipment", brand: "Purdy", description: "4 inch natural bristle brush for stain application", unitType: "each", unitCost: "14.00", retailPrice: "18.99", isActive: true },
+      { name: "Chapin Pump Sprayer 2gal", sku: "CHAPIN-2G", category: "equipment", brand: "Chapin", description: "2 gallon pump sprayer for stain application", unitType: "each", unitCost: "28.00", retailPrice: "34.99", isActive: true },
+      { name: "Ready Seal Cedar", sku: "RS-CED", category: "stain", brand: "Ready Seal", description: "Cedar penetrating stain & sealer, 1 gallon", unitType: "gallon", unitCost: "36.00", retailPrice: "48.99", coveragePerUnit: "80", coverageUnit: "sq_ft", isActive: true },
+      { name: "Cabot Australian Timber Oil", sku: "CAB-ATO", category: "stain", brand: "Cabot", description: "Penetrating oil for cedar and hardwood, 1 gallon", unitType: "gallon", unitCost: "44.00", retailPrice: "58.99", coveragePerUnit: "150", coverageUnit: "sq_ft", isActive: true },
+      { name: "3M Painter's Tape 2in", sku: "3M-PT2", category: "supplies", brand: "3M", description: "2-inch painter's tape for trim masking", unitType: "roll", unitCost: "5.00", retailPrice: "8.99", isActive: true },
+      { name: "Plastic Sheeting Drop Cloth 9x12", sku: "DROP-6", category: "supplies", brand: "Generic", description: "6mil plastic sheeting for landscape protection", unitType: "each", unitCost: "3.50", retailPrice: "6.99", isActive: true },
     ]).returning();
-    material1 = mats[0];
-
-    // Inventory
     await db.insert(inventoryItemsTable).values([
-      { materialId: mats[0].id, quantityOnHand: "24", reorderPoint: "8", reorderQuantity: "12" },
-      { materialId: mats[1].id, quantityOnHand: "12", reorderPoint: "6", reorderQuantity: "12" },
-      { materialId: mats[2].id, quantityOnHand: "6", reorderPoint: "4", reorderQuantity: "8" },
-      { materialId: mats[3].id, quantityOnHand: "3", reorderPoint: "4", reorderQuantity: "8" },
-      { materialId: mats[4].id, quantityOnHand: "15", reorderPoint: "5", reorderQuantity: "10" },
-      { materialId: mats[5].id, quantityOnHand: "4", reorderPoint: "2", reorderQuantity: "4" },
+      { materialId: allMaterials[0].id, quantityOnHand: "24", reorderPoint: "8", reorderQuantity: "12" },
+      { materialId: allMaterials[1].id, quantityOnHand: "12", reorderPoint: "6", reorderQuantity: "12" },
+      { materialId: allMaterials[2].id, quantityOnHand: "6", reorderPoint: "4", reorderQuantity: "8" },
+      { materialId: allMaterials[3].id, quantityOnHand: "3", reorderPoint: "4", reorderQuantity: "8" },
+      { materialId: allMaterials[4].id, quantityOnHand: "15", reorderPoint: "5", reorderQuantity: "10" },
+      { materialId: allMaterials[5].id, quantityOnHand: "4", reorderPoint: "2", reorderQuantity: "4" },
+      { materialId: allMaterials[6].id, quantityOnHand: "18", reorderPoint: "6", reorderQuantity: "12" },
+      { materialId: allMaterials[7].id, quantityOnHand: "9", reorderPoint: "4", reorderQuantity: "8" },
+      { materialId: allMaterials[8].id, quantityOnHand: "30", reorderPoint: "10", reorderQuantity: "20" },
+      { materialId: allMaterials[9].id, quantityOnHand: "22", reorderPoint: "8", reorderQuantity: "12" },
     ]);
     console.log("  Materials & inventory created");
   } else {
-    material1 = existingMaterials[0];
+    allMaterials = await db.select().from(materialsTable);
   }
 
-  // Customers
   const existingCustomers = await db.select().from(customersTable).limit(1);
   if (existingCustomers.length === 0) {
     const customers = await db.insert(customersTable).values([
-      {
-        firstName: "James",
-        lastName: "Anderson",
-        email: "james.anderson@gmail.com",
-        phone: "(512) 555-2341",
-        altPhone: "(512) 555-9876",
-        status: "active",
-        leadSource: "referral",
-        notes: "Excellent customer. Referred by the Smiths next door. Prefers cedar stain.",
-        address: "4521 Oak Hollow Dr",
-        city: "Austin",
-        state: "TX",
-        zip: "78746",
-      },
-      {
-        firstName: "Linda",
-        lastName: "Weaver",
-        email: "lweaver@yahoo.com",
-        phone: "(512) 555-7732",
-        status: "active",
-        leadSource: "google",
-        notes: "Has a large property with 450 LF of cedar fence. Very particular about color.",
-        address: "892 Ridgeline Blvd",
-        city: "Austin",
-        state: "TX",
-        zip: "78733",
-      },
-      {
-        firstName: "Robert",
-        lastName: "Chen",
-        email: "robert.chen@outlook.com",
-        phone: "(512) 555-4488",
-        status: "prospect",
-        leadSource: "nextdoor",
-        notes: "Interested in full fence replacement + stain. Getting multiple quotes.",
-        address: "1632 Crestwood Lane",
-        city: "Round Rock",
-        state: "TX",
-        zip: "78681",
-      },
-      {
-        firstName: "Patricia",
-        lastName: "Gutierrez",
-        email: "pgutierrez@gmail.com",
-        phone: "(512) 555-3319",
-        status: "completed",
-        leadSource: "repeat",
-        notes: "Returning customer, 2nd project. Happy with previous work. Ready to schedule.",
-        address: "744 Pecan Street",
-        city: "Cedar Park",
-        state: "TX",
-        zip: "78613",
-      },
+      { firstName: "James", lastName: "Anderson", email: "james.anderson@gmail.com", phone: "(512) 555-2341", altPhone: "(512) 555-9876", status: "active", leadSource: "referral", notes: "Excellent customer. Referred by the Smiths. Prefers TWP Cedar stain.", address: "4521 Oak Hollow Dr", city: "Austin", state: "TX", zip: "78746" },
+      { firstName: "Linda", lastName: "Weaver", email: "lweaver@yahoo.com", phone: "(512) 555-7732", status: "active", leadSource: "google", notes: "Large estate. 450 LF cedar fence. Very particular about color matching.", address: "892 Ridgeline Blvd", city: "Austin", state: "TX", zip: "78733" },
+      { firstName: "Robert", lastName: "Chen", email: "robert.chen@outlook.com", phone: "(512) 555-4488", status: "prospect", leadSource: "nextdoor", notes: "Interested in fence replacement + stain. Getting multiple quotes. Follow up 4/30.", address: "1632 Crestwood Lane", city: "Round Rock", state: "TX", zip: "78681" },
+      { firstName: "Patricia", lastName: "Gutierrez", email: "pgutierrez@gmail.com", phone: "(512) 555-3319", status: "completed", leadSource: "repeat", notes: "Returning customer — 2nd project. Quick payer. Very happy with work.", address: "744 Pecan Street", city: "Cedar Park", state: "TX", zip: "78613" },
+      { firstName: "Marcus", lastName: "Thompson", email: "mthompson@icloud.com", phone: "(512) 555-8821", status: "active", leadSource: "google", notes: "Large corner lot. Fence weathered but solid. Wants TWP Cedar, 2 coats.", address: "3310 Whispering Oaks Blvd", city: "Austin", state: "TX", zip: "78759" },
+      { firstName: "Diane", lastName: "Holloway", email: "dholloway@hotmail.com", phone: "(512) 555-6644", status: "active", leadSource: "referral", notes: "Referred by James Anderson. New cedar fence needs first treatment.", address: "218 Lakewood Terrace", city: "Austin", state: "TX", zip: "78734" },
+      { firstName: "Carlos", lastName: "Reyes", email: "c.reyes@gmail.com", phone: "(737) 555-2290", status: "prospect", leadSource: "facebook", notes: "PT fence — need to verify cure time before scheduling stain.", address: "5501 Silver Creek Dr", city: "Pflugerville", state: "TX", zip: "78660" },
+      { firstName: "Helen", lastName: "Bradshaw", email: "hbradshaw@gmail.com", phone: "(512) 555-4411", status: "completed", leadSource: "repeat", notes: "Third job with USS. Always pays immediately. Prefers Armstrong Clark.", address: "901 River Oaks Dr", city: "Lakeway", state: "TX", zip: "78734" },
     ]).returning();
 
-    // Properties
     const props = await db.insert(propertiesTable).values([
-      {
-        customerId: customers[0].id,
-        nickname: "Main Residence",
-        address: "4521 Oak Hollow Dr",
-        city: "Austin",
-        state: "TX",
-        zip: "78746",
-        propertyType: "residential",
-        fenceType: "cedar",
-        fenceAge: 8,
-        fenceCondition: "good",
-        totalLinearFeet: "210",
-        averageHeight: "6",
-        numberOfGates: 2,
-        lastTreatedDate: new Date("2018-04-15"),
-        notes: "Board-on-board cedar, mostly north-facing. Good shade coverage.",
-      },
-      {
-        customerId: customers[1].id,
-        nickname: "Main Property",
-        address: "892 Ridgeline Blvd",
-        city: "Austin",
-        state: "TX",
-        zip: "78733",
-        propertyType: "residential",
-        fenceType: "cedar",
-        fenceAge: 12,
-        fenceCondition: "fair",
-        totalLinearFeet: "450",
-        averageHeight: "6",
-        numberOfGates: 4,
-        lastTreatedDate: new Date("2016-06-01"),
-        notes: "Large estate fence. Mix of board-on-board and picket. Some sections need repair.",
-      },
-      {
-        customerId: customers[3].id,
-        nickname: "Home",
-        address: "744 Pecan Street",
-        city: "Cedar Park",
-        state: "TX",
-        zip: "78613",
-        propertyType: "residential",
-        fenceType: "cedar",
-        fenceAge: 5,
-        fenceCondition: "excellent",
-        totalLinearFeet: "175",
-        averageHeight: "6",
-        numberOfGates: 1,
-        notes: "New cedar fence, first treatment.",
-      },
+      { customerId: customers[0].id, nickname: "Main Residence", address: "4521 Oak Hollow Dr", city: "Austin", state: "TX", zip: "78746", propertyType: "residential", fenceType: "cedar", fenceAge: 8, fenceCondition: "good", totalLinearFeet: "210", averageHeight: "6", numberOfGates: 2, lastTreatedDate: new Date("2018-04-15"), notes: "Board-on-board cedar, north-facing. Good shade coverage." },
+      { customerId: customers[1].id, nickname: "Ridgeline Estate", address: "892 Ridgeline Blvd", city: "Austin", state: "TX", zip: "78733", propertyType: "residential", fenceType: "cedar", fenceAge: 12, fenceCondition: "fair", totalLinearFeet: "450", averageHeight: "6", numberOfGates: 4, lastTreatedDate: new Date("2016-06-01"), notes: "Mix of board-on-board and picket. Some sections need repair." },
+      { customerId: customers[3].id, nickname: "Home", address: "744 Pecan Street", city: "Cedar Park", state: "TX", zip: "78613", propertyType: "residential", fenceType: "cedar", fenceAge: 5, fenceCondition: "excellent", totalLinearFeet: "175", averageHeight: "6", numberOfGates: 1, notes: "New cedar fence, first treatment." },
+      { customerId: customers[4].id, nickname: "Corner Lot", address: "3310 Whispering Oaks Blvd", city: "Austin", state: "TX", zip: "78759", propertyType: "residential", fenceType: "cedar", fenceAge: 11, fenceCondition: "fair", totalLinearFeet: "320", averageHeight: "6", numberOfGates: 3, lastTreatedDate: new Date("2017-09-20"), notes: "Full perimeter. West side most weathered." },
+      { customerId: customers[5].id, nickname: "New Build", address: "218 Lakewood Terrace", city: "Austin", state: "TX", zip: "78734", propertyType: "residential", fenceType: "cedar", fenceAge: 1, fenceCondition: "excellent", totalLinearFeet: "140", averageHeight: "6", numberOfGates: 1, notes: "Brand new cedar — first seal." },
+      { customerId: customers[7].id, nickname: "River Oaks Estate", address: "901 River Oaks Dr", city: "Lakeway", state: "TX", zip: "78734", propertyType: "residential", fenceType: "cedar", fenceAge: 6, fenceCondition: "good", totalLinearFeet: "195", averageHeight: "8", numberOfGates: 2, lastTreatedDate: new Date("2022-05-10"), notes: "8ft privacy fence. Match Armstrong Clark Naturaltone exactly." },
     ]).returning();
-
-    // Projects
-    const proj1Date = new Date("2026-04-10");
-    const proj2Date = new Date("2026-04-20");
-    const proj3Date = new Date("2026-05-05");
-    const proj4Date = new Date("2026-03-15");
 
     const projects = await db.insert(projectsTable).values([
-      {
-        customerId: customers[0].id,
-        propertyId: props[0].id,
-        projectName: "Oak Hollow Fence Stain & Seal",
-        projectType: "stain_seal",
-        status: "in_progress",
-        priority: "high",
-        scheduledDate: proj1Date,
-        estimatedCost: "1650.00",
-        totalSqFt: "2520",
-        linearFeet: "210",
-        fenceType: "cedar",
-        stainProduct: "TWP 100 Cedar",
-        coatsApplied: 2,
-        notes: "Two coats. Customer wants to match original cedar color. Check gate hinges.",
-        assignedToId: adminUser!.id,
-      },
-      {
-        customerId: customers[1].id,
-        propertyId: props[1].id,
-        projectName: "Ridgeline Estate Full Restoration",
-        projectType: "stain_seal",
-        status: "pending",
-        priority: "high",
-        scheduledDate: proj2Date,
-        estimatedCost: "4200.00",
-        totalSqFt: "5400",
-        linearFeet: "450",
-        fenceType: "cedar",
-        stainProduct: "Armstrong Clark Rustic",
-        coatsApplied: 2,
-        notes: "Large job. Will need 2-day scheduling. Confirm product availability.",
-        assignedToId: adminUser!.id,
-      },
-      {
-        customerId: customers[2].id,
-        projectName: "Crestwood Fence Quote",
-        projectType: "stain_seal",
-        status: "pending",
-        priority: "medium",
-        scheduledDate: proj3Date,
-        estimatedCost: "1100.00",
-        notes: "Customer still getting quotes. Follow up by 4/30.",
-      },
-      {
-        customerId: customers[3].id,
-        propertyId: props[2].id,
-        projectName: "Pecan Street New Fence Seal",
-        projectType: "seal",
-        status: "completed",
-        priority: "medium",
-        scheduledDate: proj4Date,
-        completedDate: new Date("2026-03-18"),
-        estimatedCost: "875.00",
-        finalCost: "875.00",
-        totalSqFt: "2100",
-        linearFeet: "175",
-        fenceType: "cedar",
-        stainProduct: "Defy Extreme Clear",
-        coatsApplied: 1,
-        notes: "Single coat seal on new cedar. Customer very happy.",
-        assignedToId: adminUser!.id,
-      },
+      { customerId: customers[0].id, propertyId: props[0].id, projectName: "Oak Hollow Fence Stain & Seal", projectType: "stain_seal", status: "in_progress", priority: "high", scheduledDate: new Date("2026-04-28"), estimatedCost: "1650.00", totalSqFt: "2520", linearFeet: "210", fenceType: "cedar", stainProduct: "TWP 100 Cedar", coatsApplied: 2, notes: "Two coats. Customer wants original cedar color. Check gate hinges.", assignedToId: adminUser.id },
+      { customerId: customers[1].id, propertyId: props[1].id, projectName: "Ridgeline Estate Full Restoration", projectType: "stain_seal", status: "pending", priority: "high", scheduledDate: new Date("2026-05-12"), estimatedCost: "4200.00", totalSqFt: "5400", linearFeet: "450", fenceType: "cedar", stainProduct: "Armstrong Clark Rustic", coatsApplied: 2, notes: "2-day job. Confirm product availability before scheduling.", assignedToId: adminUser.id },
+      { customerId: customers[2].id, projectName: "Crestwood Fence Quote", projectType: "stain_seal", status: "pending", priority: "medium", scheduledDate: new Date("2026-05-20"), estimatedCost: "1100.00", notes: "Getting multiple quotes. Follow up by 4/30." },
+      { customerId: customers[3].id, propertyId: props[2].id, projectName: "Pecan Street New Fence Seal", projectType: "seal", status: "completed", priority: "medium", scheduledDate: new Date("2026-03-15"), completedDate: new Date("2026-03-18"), estimatedCost: "875.00", finalCost: "875.00", totalSqFt: "2100", linearFeet: "175", fenceType: "cedar", stainProduct: "Defy Extreme Clear", coatsApplied: 1, notes: "Single coat clear seal. Customer very happy.", assignedToId: adminUser.id },
+      { customerId: customers[4].id, propertyId: props[3].id, projectName: "Whispering Oaks Restoration", projectType: "stain_seal", status: "in_progress", priority: "high", scheduledDate: new Date("2026-04-30"), estimatedCost: "2800.00", totalSqFt: "3840", linearFeet: "320", fenceType: "cedar", stainProduct: "TWP 100 Cedar", coatsApplied: 2, notes: "Power wash required. Mildew on north side. Start west face.", assignedToId: adminUser.id },
+      { customerId: customers[5].id, propertyId: props[4].id, projectName: "Lakewood New Cedar First Seal", projectType: "seal", status: "scheduled", priority: "medium", scheduledDate: new Date("2026-05-08"), estimatedCost: "690.00", totalSqFt: "1680", linearFeet: "140", fenceType: "cedar", stainProduct: "Defy Extreme Clear", coatsApplied: 1, notes: "Brand new cedar. Single coat protective seal.", assignedToId: adminUser.id },
+      { customerId: customers[7].id, propertyId: props[5].id, projectName: "River Oaks 8ft Privacy Refresh", projectType: "stain_seal", status: "completed", priority: "medium", scheduledDate: new Date("2026-02-20"), completedDate: new Date("2026-02-22"), estimatedCost: "1950.00", finalCost: "1950.00", totalSqFt: "3120", linearFeet: "195", fenceType: "cedar", stainProduct: "Armstrong Clark Cedar Naturaltone", coatsApplied: 2, notes: "8ft boards. Color matched previous exactly. Customer thrilled.", assignedToId: adminUser.id },
+      { customerId: customers[6].id, projectName: "Silver Creek PT Fence Evaluation", projectType: "stain_seal", status: "pending", priority: "low", estimatedCost: "950.00", notes: "PT fence — confirm cure time. Schedule site assessment first." },
     ]).returning();
 
-    // Diagnoses
     await db.insert(diagnosesTable).values([
-      {
-        projectId: projects[0].id,
-        customerId: customers[0].id,
-        propertyId: props[0].id,
-        diagnosedById: adminUser!.id,
-        totalLinearFeet: "210",
-        averageHeight: "6",
-        totalSqFt: "2520",
-        fenceCondition: "good",
-        fenceAge: 8,
-        fenceType: "cedar",
-        numberOfGates: 2,
-        numberOfPosts: 28,
-        previouslyStained: true,
-        previousProduct: "Cabot Australian Timber Oil",
-        lastTreatedYear: 2018,
-        surfaceMoisture: "dry",
-        mildewPresent: false,
-        grayingPresent: true,
-        crackingPresent: false,
-        recommendedTreatment: "stain_seal",
-        recommendedCoats: 2,
-        recommendedProduct: "TWP 100 Cedar",
-        estimatedProductGallons: "50.40",
-        estimatedLaborHours: "18.4",
-        estimatedMaterialCost: "2520.00",
-        estimatedLaborCost: "828.00",
-        estimatedTotal: "1648.00",
-        diagnosedAt: new Date("2026-04-08"),
-        notes: "Cedar is in good shape but needs color refresh. Both sides need treatment.",
-        photoUrls: [],
-        disclaimerMode: "soft",
-      },
-      {
-        projectId: projects[3].id,
-        customerId: customers[3].id,
-        propertyId: props[2].id,
-        diagnosedById: adminUser!.id,
-        totalLinearFeet: "175",
-        averageHeight: "6",
-        totalSqFt: "2100",
-        fenceCondition: "excellent",
-        fenceAge: 5,
-        fenceType: "cedar",
-        numberOfGates: 1,
-        numberOfPosts: 23,
-        previouslyStained: false,
-        surfaceMoisture: "dry",
-        mildewPresent: false,
-        grayingPresent: false,
-        crackingPresent: false,
-        recommendedTreatment: "seal",
-        recommendedCoats: 1,
-        recommendedProduct: "Defy Extreme Clear",
-        estimatedProductGallons: "21",
-        estimatedLaborHours: "10",
-        estimatedMaterialCost: "735.00",
-        estimatedLaborCost: "450.00",
-        estimatedTotal: "875.00",
-        diagnosedAt: new Date("2026-03-14"),
-        notes: "Brand new cedar. Single coat seal to protect. No stain needed yet.",
-        photoUrls: [],
-        disclaimerMode: "hard",
-      },
+      { projectId: projects[0].id, customerId: customers[0].id, propertyId: props[0].id, diagnosedById: adminUser.id, totalLinearFeet: "210", averageHeight: "6", totalSqFt: "2520", fenceCondition: "good", fenceAge: 8, fenceType: "cedar", numberOfGates: 2, numberOfPosts: 28, previouslyStained: true, previousProduct: "Cabot Australian Timber Oil", lastTreatedYear: 2018, surfaceMoisture: "dry", mildewPresent: false, grayingPresent: true, crackingPresent: false, recommendedTreatment: "stain_seal", recommendedCoats: 2, recommendedProduct: "TWP 100 Cedar", estimatedProductGallons: "50.40", estimatedLaborHours: "18.4", estimatedMaterialCost: "2116.80", estimatedLaborCost: "828.00", estimatedTotal: "1648.00", diagnosedAt: new Date("2026-04-08"), notes: "Cedar is in good shape but needs color refresh. Both sides need treatment. Gate #2 hinge is squeaky — flag for crew.", disclaimerMode: "soft" },
+      { projectId: projects[3].id, customerId: customers[3].id, propertyId: props[2].id, diagnosedById: adminUser.id, totalLinearFeet: "175", averageHeight: "6", totalSqFt: "2100", fenceCondition: "excellent", fenceAge: 5, fenceType: "cedar", numberOfGates: 1, numberOfPosts: 23, previouslyStained: false, surfaceMoisture: "dry", mildewPresent: false, grayingPresent: false, crackingPresent: false, recommendedTreatment: "seal", recommendedCoats: 1, recommendedProduct: "Defy Extreme Clear", estimatedProductGallons: "21", estimatedLaborHours: "10", estimatedMaterialCost: "735.00", estimatedLaborCost: "450.00", estimatedTotal: "875.00", diagnosedAt: new Date("2026-03-14"), notes: "Brand new cedar. Single coat seal only. No stain needed yet.", disclaimerMode: "hard" },
+      { projectId: projects[4].id, customerId: customers[4].id, propertyId: props[3].id, diagnosedById: adminUser.id, totalLinearFeet: "320", averageHeight: "6", totalSqFt: "3840", fenceCondition: "fair", fenceAge: 11, fenceType: "cedar", numberOfGates: 3, numberOfPosts: 42, previouslyStained: true, previousProduct: "Unknown (DIY)", lastTreatedYear: 2017, surfaceMoisture: "dry", mildewPresent: true, grayingPresent: true, crackingPresent: true, looseBoards: false, rotPresent: false, recommendedTreatment: "stain_seal", recommendedCoats: 2, recommendedProduct: "TWP 100 Cedar", estimatedProductGallons: "76.8", estimatedLaborHours: "28", estimatedMaterialCost: "3225.60", estimatedLaborCost: "1260.00", estimatedTotal: "2820.00", diagnosedAt: new Date("2026-04-18"), notes: "Mildew on north-facing sections. Power wash required. West side has significant graying and surface cracks.", disclaimerMode: "soft" },
+      { projectId: projects[6].id, customerId: customers[7].id, propertyId: props[5].id, diagnosedById: adminUser.id, totalLinearFeet: "195", averageHeight: "8", totalSqFt: "3120", fenceCondition: "good", fenceAge: 6, fenceType: "cedar", numberOfGates: 2, numberOfPosts: 26, previouslyStained: true, previousProduct: "Armstrong Clark Cedar Naturaltone", lastTreatedYear: 2022, surfaceMoisture: "dry", mildewPresent: false, grayingPresent: false, crackingPresent: false, recommendedTreatment: "stain_seal", recommendedCoats: 2, recommendedProduct: "Armstrong Clark Cedar Naturaltone", estimatedProductGallons: "41.6", estimatedLaborHours: "22", estimatedMaterialCost: "1580.80", estimatedLaborCost: "990.00", estimatedTotal: "1950.00", diagnosedAt: new Date("2026-02-15"), notes: "8ft fence in good condition. Stain fading. Match Armstrong Clark Naturaltone exactly.", disclaimerMode: "soft" },
+      { projectId: projects[5].id, customerId: customers[5].id, propertyId: props[4].id, diagnosedById: adminUser.id, totalLinearFeet: "140", averageHeight: "6", totalSqFt: "1680", fenceCondition: "excellent", fenceAge: 1, fenceType: "cedar", numberOfGates: 1, numberOfPosts: 19, previouslyStained: false, surfaceMoisture: "dry", mildewPresent: false, grayingPresent: false, crackingPresent: false, recommendedTreatment: "seal", recommendedCoats: 1, recommendedProduct: "Defy Extreme Clear", estimatedProductGallons: "16.8", estimatedLaborHours: "8", estimatedMaterialCost: "588.00", estimatedLaborCost: "360.00", estimatedTotal: "680.00", diagnosedAt: new Date("2026-04-22"), notes: "Brand new cedar. Clear seal only. Very straightforward.", disclaimerMode: "soft" },
     ]);
 
-    // Invoices + line items
-    const inv1 = await db.insert(invoicesTable).values([
-      {
-        projectId: projects[0].id,
-        customerId: customers[0].id,
-        invoiceNumber: "USS-1001",
-        status: "sent",
-        subtotal: "1485.00",
-        taxRate: "0.0825",
-        taxAmount: "122.51",
-        discountAmount: "0",
-        totalAmount: "1607.51",
-        paidAmount: "0",
-        balanceDue: "1607.51",
-        dueDate: new Date("2026-05-10"),
-        notes: "2-coat cedar stain & seal — Oak Hollow Dr",
-        softDisclaimerText: "Note: Weather conditions may affect drying time. USS is not responsible for re-staining needs due to extreme weather events within 30 days of service.",
-        disclaimerMode: "soft",
-      },
-      {
-        projectId: projects[3].id,
-        customerId: customers[3].id,
-        invoiceNumber: "USS-1000",
-        status: "paid",
-        subtotal: "875.00",
-        taxRate: "0.0825",
-        taxAmount: "72.19",
-        discountAmount: "0",
-        totalAmount: "947.19",
-        paidAmount: "947.19",
-        balanceDue: "0",
-        dueDate: new Date("2026-04-15"),
-        notes: "Single coat clear seal — Pecan Street",
-        disclaimerMode: "hard",
-      },
+    const invoices = await db.insert(invoicesTable).values([
+      { projectId: projects[0].id, customerId: customers[0].id, invoiceNumber: "USS-1001", status: "sent", subtotal: "1485.00", taxRate: "0.0825", taxAmount: "122.51", discountAmount: "0", totalAmount: "1607.51", paidAmount: "0", balanceDue: "1607.51", dueDate: new Date("2026-05-28"), notes: "2-coat cedar stain & seal — Oak Hollow Dr. Due upon completion.", softDisclaimerText: "Note: Weather conditions may affect drying time. USS is not responsible for re-staining needs due to extreme weather events within 30 days of service.", disclaimerMode: "soft" },
+      { projectId: projects[3].id, customerId: customers[3].id, invoiceNumber: "USS-1000", status: "paid", subtotal: "875.00", taxRate: "0.0825", taxAmount: "72.19", discountAmount: "0", totalAmount: "947.19", paidAmount: "947.19", balanceDue: "0", dueDate: new Date("2026-04-01"), notes: "Single coat clear seal — Pecan Street.", hardDisclaimerText: "DISCLAIMER: Customer acknowledges that wood surfaces expand and contract naturally with temperature and humidity changes. USS provides no warranty for color matching on previously stained wood.", disclaimerMode: "hard" },
+      { projectId: projects[4].id, customerId: customers[4].id, invoiceNumber: "USS-1002", status: "draft", subtotal: "2580.00", taxRate: "0.0825", taxAmount: "212.85", discountAmount: "0", totalAmount: "2792.85", paidAmount: "0", balanceDue: "2792.85", dueDate: new Date("2026-06-01"), notes: "2-coat full restoration — Whispering Oaks. Includes power wash & mildew treatment.", disclaimerMode: "soft" },
+      { projectId: projects[6].id, customerId: customers[7].id, invoiceNumber: "USS-1003", status: "paid", subtotal: "1800.00", taxRate: "0.0825", taxAmount: "148.50", discountAmount: "0", totalAmount: "1948.50", paidAmount: "1948.50", balanceDue: "0", dueDate: new Date("2026-03-15"), notes: "2-coat 8ft privacy fence — River Oaks Dr.", disclaimerMode: "soft" },
+      { projectId: projects[1].id, customerId: customers[1].id, invoiceNumber: "USS-1004", status: "partial", subtotal: "3850.00", taxRate: "0.0825", taxAmount: "317.63", discountAmount: "200.00", totalAmount: "3967.63", paidAmount: "1500.00", balanceDue: "2467.63", dueDate: new Date("2026-06-12"), notes: "Ridgeline Estate 2-day job. $200 loyalty discount. $1,500 deposit received.", disclaimerMode: "soft" },
     ]).returning();
 
     await db.insert(invoiceLineItemsTable).values([
-      { invoiceId: inv1[0].id, description: "Fence Stain & Seal — 210 LF cedar board-on-board", quantity: "1", unitPrice: "1260.00", lineTotal: "1260.00", category: "labor" },
-      { invoiceId: inv1[0].id, description: "TWP 100 Series Cedar Stain (26 gal)", quantity: "26", unitPrice: "42.00", lineTotal: "1092.00", category: "materials" },
-      { invoiceId: inv1[0].id, description: "Gate Treatment (2 gates)", quantity: "2", unitPrice: "75.00", lineTotal: "150.00", category: "labor" },
-      { invoiceId: inv1[1].id, description: "Fence Clear Seal — 175 LF cedar picket", quantity: "1", unitPrice: "700.00", lineTotal: "700.00", category: "labor" },
-      { invoiceId: inv1[1].id, description: "Defy Extreme Clear (21 gal)", quantity: "21", unitPrice: "35.00", lineTotal: "735.00", category: "materials" },
+      { invoiceId: invoices[0].id, description: "Fence Stain & Seal — 210 LF cedar board-on-board (both sides)", quantity: "1", unitPrice: "1260.00", lineTotal: "1260.00", category: "labor" },
+      { invoiceId: invoices[0].id, description: "TWP 100 Series Cedar Stain (26 gal)", quantity: "26", unitPrice: "42.00", lineTotal: "1092.00", category: "materials" },
+      { invoiceId: invoices[0].id, description: "Gate Treatment (2 gates)", quantity: "2", unitPrice: "75.00", lineTotal: "150.00", category: "labor" },
+      { invoiceId: invoices[0].id, description: "Early Booking Discount", quantity: "1", unitPrice: "-300.00", lineTotal: "-300.00", category: "discount" },
+      { invoiceId: invoices[1].id, description: "Fence Clear Seal — 175 LF cedar (1 coat)", quantity: "1", unitPrice: "700.00", lineTotal: "700.00", category: "labor" },
+      { invoiceId: invoices[1].id, description: "Defy Extreme Clear (21 gal)", quantity: "21", unitPrice: "35.00", lineTotal: "735.00", category: "materials" },
+      { invoiceId: invoices[2].id, description: "Power Wash & Mildew Treatment — 320 LF", quantity: "1", unitPrice: "580.00", lineTotal: "580.00", category: "labor" },
+      { invoiceId: invoices[2].id, description: "Fence Stain & Seal — 320 LF cedar (2 coats)", quantity: "1", unitPrice: "1840.00", lineTotal: "1840.00", category: "labor" },
+      { invoiceId: invoices[2].id, description: "TWP 100 Cedar Stain (42 gal)", quantity: "42", unitPrice: "42.00", lineTotal: "1764.00", category: "materials" },
+      { invoiceId: invoices[2].id, description: "Gate Treatment (3 gates)", quantity: "3", unitPrice: "75.00", lineTotal: "225.00", category: "labor" },
+      { invoiceId: invoices[3].id, description: "Fence Stain & Seal — 195 LF 8ft privacy cedar", quantity: "1", unitPrice: "1560.00", lineTotal: "1560.00", category: "labor" },
+      { invoiceId: invoices[3].id, description: "Armstrong Clark Cedar Naturaltone (26 gal)", quantity: "26", unitPrice: "38.00", lineTotal: "988.00", category: "materials" },
+      { invoiceId: invoices[3].id, description: "Gate Treatment (2 gates)", quantity: "2", unitPrice: "75.00", lineTotal: "150.00", category: "labor" },
+      { invoiceId: invoices[4].id, description: "Fence Stain & Seal — 450 LF cedar estate (2 coats)", quantity: "1", unitPrice: "2700.00", lineTotal: "2700.00", category: "labor" },
+      { invoiceId: invoices[4].id, description: "Armstrong Clark Cedar Naturaltone (36 gal)", quantity: "36", unitPrice: "38.00", lineTotal: "1368.00", category: "materials" },
+      { invoiceId: invoices[4].id, description: "Gate Treatment (4 gates)", quantity: "4", unitPrice: "75.00", lineTotal: "300.00", category: "labor" },
+      { invoiceId: invoices[4].id, description: "Loyalty Repeat Customer Discount", quantity: "1", unitPrice: "-200.00", lineTotal: "-200.00", category: "discount" },
     ]);
 
-    // Payment for completed project
-    await db.insert(paymentsTable).values({
-      invoiceId: inv1[1].id,
-      customerId: customers[3].id,
-      amount: "947.19",
-      paymentMethod: "check",
-      paymentDate: new Date("2026-03-20"),
-      referenceNumber: "CHK-4421",
-      notes: "Check received at completion of job.",
-    });
-
-    // Jobs
-    await db.insert(jobsTable).values([
-      {
-        projectId: projects[0].id,
-        customerId: customers[0].id,
-        assignedToId: adminUser!.id,
-        jobName: "Prep & First Coat — Oak Hollow",
-        status: "scheduled",
-        jobType: "application",
-        scheduledDate: new Date("2026-04-28"),
-        scheduledTimeStart: "07:30",
-        scheduledTimeEnd: "13:00",
-        estimatedHours: "5.5",
-        crewSize: 2,
-        notes: "Start on south fence panel. Apply light power wash first, let dry 2 hours.",
-      },
-      {
-        projectId: projects[0].id,
-        customerId: customers[0].id,
-        assignedToId: adminUser!.id,
-        jobName: "Second Coat & Finish — Oak Hollow",
-        status: "scheduled",
-        jobType: "application",
-        scheduledDate: new Date("2026-04-29"),
-        scheduledTimeStart: "07:30",
-        scheduledTimeEnd: "12:00",
-        estimatedHours: "4.5",
-        crewSize: 2,
-        notes: "Second coat. Focus on gates and posts. Take completion photos.",
-      },
+    await db.insert(paymentsTable).values([
+      { invoiceId: invoices[1].id, customerId: customers[3].id, amount: "947.19", paymentMethod: "check", paymentDate: new Date("2026-03-20"), referenceNumber: "CHK-4421", notes: "Check received at job completion." },
+      { invoiceId: invoices[3].id, customerId: customers[7].id, amount: "1948.50", paymentMethod: "zelle", paymentDate: new Date("2026-02-24"), referenceNumber: "ZEL-0224", notes: "Zelle received same day as job completion." },
+      { invoiceId: invoices[4].id, customerId: customers[1].id, amount: "1500.00", paymentMethod: "check", paymentDate: new Date("2026-04-20"), referenceNumber: "CHK-8801", notes: "Deposit check from Linda Weaver. Balance due on completion." },
     ]);
 
-    // Activity
+    const jobs = await db.insert(jobsTable).values([
+      { projectId: projects[0].id, customerId: customers[0].id, assignedToId: adminUser.id, jobName: "Prep & First Coat — Oak Hollow", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-04-28"), scheduledTimeStart: "07:30", scheduledTimeEnd: "13:00", estimatedHours: "5.5", crewSize: 2, notes: "Start south fence panel. Light power wash first, let dry 2 hours. Bring TWP 100 Cedar (14 gal) and two 4in brushes." },
+      { projectId: projects[0].id, customerId: customers[0].id, assignedToId: adminUser.id, jobName: "Second Coat & Finish — Oak Hollow", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-04-29"), scheduledTimeStart: "07:30", scheduledTimeEnd: "12:00", estimatedHours: "4.5", crewSize: 2, notes: "Second coat. Focus on gates and posts. Take completion photos before leaving." },
+      { projectId: projects[4].id, customerId: customers[4].id, assignedToId: adminUser.id, jobName: "Power Wash & Mildew Treat — Whispering Oaks", status: "completed", jobType: "prep", scheduledDate: new Date("2026-04-24"), scheduledTimeStart: "08:00", scheduledTimeEnd: "12:00", estimatedHours: "4.0", crewSize: 1, actualHoursWorked: "3.5", completedAt: new Date("2026-04-24"), notes: "Power wash all 320 LF. Sodium hypochlorite on mildew. Let dry 48hrs min." },
+      { projectId: projects[4].id, customerId: customers[4].id, assignedToId: adminUser.id, jobName: "First Coat — Whispering Oaks", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-04-30"), scheduledTimeStart: "07:00", scheduledTimeEnd: "14:00", estimatedHours: "7.0", crewSize: 2, notes: "TWP 100 Cedar first coat. Start west side (most weathered). Tarp plant beds." },
+      { projectId: projects[4].id, customerId: customers[4].id, assignedToId: adminUser.id, jobName: "Second Coat & Gates — Whispering Oaks", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-05-02"), scheduledTimeStart: "07:00", scheduledTimeEnd: "13:00", estimatedHours: "6.0", crewSize: 2, notes: "Final coat. Gates and posts last. Complete photos required. Collect balance." },
+      { projectId: projects[3].id, customerId: customers[3].id, assignedToId: adminUser.id, jobName: "Seal Application — Pecan Street", status: "completed", jobType: "application", scheduledDate: new Date("2026-03-18"), scheduledTimeStart: "08:00", scheduledTimeEnd: "14:00", estimatedHours: "6.0", actualHoursWorked: "5.5", crewSize: 2, completedAt: new Date("2026-03-18"), notes: "Single coat Defy Clear. Brush only per customer. Gate closed — dog in yard." },
+      { projectId: projects[6].id, customerId: customers[7].id, assignedToId: adminUser.id, jobName: "Day 1 — River Oaks 8ft Fence", status: "completed", jobType: "application", scheduledDate: new Date("2026-02-21"), scheduledTimeStart: "07:00", scheduledTimeEnd: "15:00", estimatedHours: "8.0", actualHoursWorked: "8.5", crewSize: 2, completedAt: new Date("2026-02-21"), notes: "North and east panels. Armstrong Clark Naturaltone. Extension ladders needed." },
+      { projectId: projects[6].id, customerId: customers[7].id, assignedToId: adminUser.id, jobName: "Day 2 — River Oaks 8ft Fence", status: "completed", jobType: "application", scheduledDate: new Date("2026-02-22"), scheduledTimeStart: "07:00", scheduledTimeEnd: "14:00", estimatedHours: "7.0", actualHoursWorked: "6.5", crewSize: 2, completedAt: new Date("2026-02-22"), notes: "South and west panels + gates. Customer signed off on completion." },
+      { projectId: projects[5].id, customerId: customers[5].id, assignedToId: adminUser.id, jobName: "New Cedar Seal — Lakewood Terrace", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-05-08"), scheduledTimeStart: "08:00", scheduledTimeEnd: "12:00", estimatedHours: "4.0", crewSize: 2, notes: "Quick seal job. Defy Extreme Clear single coat. Confirm gate latch." },
+      { projectId: projects[1].id, customerId: customers[1].id, assignedToId: adminUser.id, jobName: "Ridgeline Day 1 — Prep & First Coat", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-05-12"), scheduledTimeStart: "06:30", scheduledTimeEnd: "17:00", estimatedHours: "10.0", crewSize: 3, notes: "Full crew for 450 LF. Start on back fence. Bring full product load." },
+      { projectId: projects[1].id, customerId: customers[1].id, assignedToId: adminUser.id, jobName: "Ridgeline Day 2 — Second Coat & Finish", status: "scheduled", jobType: "application", scheduledDate: new Date("2026-05-13"), scheduledTimeStart: "07:00", scheduledTimeEnd: "16:00", estimatedHours: "9.0", crewSize: 3, notes: "Final coat. All 4 gates + posts. Completion photos before leaving." },
+    ]).returning();
+
+    await db.insert(jobsheetsTable).values([
+      { jobId: jobs[5].id, projectId: projects[3].id, customerId: customers[3].id, title: "Work Order — Pecan Street Clear Seal", workDescription: "Apply one coat Defy Extreme Clear to all cedar fence surfaces, both sides, including gate.", specialInstructions: "NO sprayer — brush only per customer request. Dog in yard, keep gate closed. Customer not home.", productsUsed: "Defy Extreme Clear", gallonsUsed: "21", hoursWorked: "5.5", crewNotes: "Great access. Customer provided water hookup. No issues.", completionNotes: "Job complete. All surfaces coated. Gate latch needs repair — flagged for customer.", status: "completed", completedAt: new Date("2026-03-18") },
+      { jobId: jobs[6].id, projectId: projects[6].id, customerId: customers[7].id, title: "Day 1 Work Order — River Oaks 8ft Fence", workDescription: "Armstrong Clark Cedar Naturaltone application. Day 1: North and East panels, both sides.", specialInstructions: "8ft fence requires extension ladders. Lay tarps on deck — customer particular about drips. Match previous color.", productsUsed: "Armstrong Clark Cedar Naturaltone", gallonsUsed: "22", hoursWorked: "8.5", crewNotes: "Extension handles worked well. Color match excellent.", status: "completed", completedAt: new Date("2026-02-21") },
+      { jobId: jobs[7].id, projectId: projects[6].id, customerId: customers[7].id, title: "Day 2 Work Order — River Oaks 8ft Fence", workDescription: "Day 2: South and West panels + both gates. Final coat and cleanup.", specialInstructions: "Gates require customer present for sign-off. Take final photos from all 4 corners.", productsUsed: "Armstrong Clark Cedar Naturaltone", gallonsUsed: "19", hoursWorked: "6.5", crewNotes: "Finished ahead of schedule. Customer inspected and signed off.", completionNotes: "Project complete. Customer paid via Zelle immediately.", status: "completed", completedAt: new Date("2026-02-22") },
+      { jobId: jobs[0].id, projectId: projects[0].id, customerId: customers[0].id, title: "Work Order — Oak Hollow Prep & First Coat", workDescription: "Light power wash, let dry 2 hours, then apply first coat TWP 100 Cedar (both sides of all sections).", specialInstructions: "Gate access code: 4421. Customer NOT home. Call Chad if any issues. Do NOT let dog out.", productsUsed: "TWP 100 Series Cedar Stain", status: "draft" },
+    ]);
+
+    await db.insert(documentsTable).values([
+      { projectId: projects[0].id, customerId: customers[0].id, name: "Oak Hollow Pre-Job Photos", documentType: "photo", description: "Before photos taken during diagnosis — April 8, 2026.", fileUrl: "https://storage.ussops.com/docs/proj1/before-photos.zip", fileSize: 12400000, mimeType: "application/zip", uploadedById: adminUser.id },
+      { projectId: projects[0].id, customerId: customers[0].id, name: "USS-1001 Invoice", documentType: "invoice", description: "Sent invoice for Oak Hollow Stain & Seal project.", fileUrl: "https://storage.ussops.com/docs/proj1/USS-1001.pdf", fileSize: 145000, mimeType: "application/pdf", uploadedById: adminUser.id },
+      { projectId: projects[3].id, customerId: customers[3].id, name: "Pecan Street Completion Photos", documentType: "photo", description: "After photos — March 18, 2026. Before/after included.", fileUrl: "https://storage.ussops.com/docs/proj4/completion-photos.zip", fileSize: 8900000, mimeType: "application/zip", uploadedById: adminUser.id },
+      { projectId: projects[3].id, customerId: customers[3].id, name: "Signed Hard Disclaimer — Gutierrez", documentType: "contract", description: "Hard disclaimer signed by Patricia Gutierrez prior to service.", fileUrl: "https://storage.ussops.com/docs/proj4/signed-disclaimer.pdf", fileSize: 98000, mimeType: "application/pdf", uploadedById: adminUser.id },
+      { projectId: projects[6].id, customerId: customers[7].id, name: "River Oaks Before & After Photos", documentType: "photo", description: "Complete before/after set — 8ft privacy fence transformation.", fileUrl: "https://storage.ussops.com/docs/proj7/before-after.zip", fileSize: 18700000, mimeType: "application/zip", uploadedById: adminUser.id },
+      { projectId: projects[6].id, customerId: customers[7].id, name: "USS-1003 Invoice — Bradshaw", documentType: "invoice", description: "Paid invoice for River Oaks 8ft fence restoration.", fileUrl: "https://storage.ussops.com/docs/proj7/USS-1003.pdf", fileSize: 132000, mimeType: "application/pdf", uploadedById: adminUser.id },
+      { projectId: projects[4].id, customerId: customers[4].id, name: "Whispering Oaks Diagnosis Photos", documentType: "photo", description: "Diagnosis photos showing mildew and weathering on north/west faces.", fileUrl: "https://storage.ussops.com/docs/proj5/diagnosis.zip", fileSize: 7200000, mimeType: "application/zip", uploadedById: adminUser.id },
+      { projectId: projects[1].id, customerId: customers[1].id, name: "Ridgeline Estate Project Proposal", documentType: "contract", description: "Project proposal and scope of work for 450 LF restoration.", fileUrl: "https://storage.ussops.com/docs/proj2/proposal.pdf", fileSize: 220000, mimeType: "application/pdf", uploadedById: adminUser.id },
+    ]);
+
     await db.insert(activityTable).values([
-      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser!.id, entityType: "project", entityId: projects[0].id, action: "created", description: "Project created: Oak Hollow Fence Stain & Seal" },
-      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser!.id, entityType: "diagnosis", entityId: 1, action: "created", description: "Fence diagnosis completed for Oak Hollow" },
-      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser!.id, entityType: "invoice", entityId: inv1[0].id, action: "sent", description: `Invoice ${inv1[0].invoiceNumber} sent to customer` },
-      { projectId: projects[3].id, customerId: customers[3].id, userId: adminUser!.id, entityType: "payment", entityId: 1, action: "received", description: "Payment of $947.19 received for USS-1000" },
-      { customerId: customers[2].id, userId: adminUser!.id, entityType: "customer", entityId: customers[2].id, action: "created", description: "New prospect added: Robert Chen" },
+      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser.id, entityType: "project", entityId: projects[0].id, action: "created", description: "Project created: Oak Hollow Fence Stain & Seal" },
+      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser.id, entityType: "diagnosis", entityId: 1, action: "created", description: "Fence diagnosis completed for Oak Hollow — condition: good" },
+      { projectId: projects[0].id, customerId: customers[0].id, userId: adminUser.id, entityType: "invoice", entityId: invoices[0].id, action: "sent", description: `Invoice ${invoices[0].invoiceNumber} sent to James Anderson ($1,607.51)` },
+      { projectId: projects[3].id, customerId: customers[3].id, userId: adminUser.id, entityType: "payment", entityId: 1, action: "received", description: "Payment of $947.19 received for USS-1000 (Patricia Gutierrez)" },
+      { customerId: customers[2].id, userId: adminUser.id, entityType: "customer", entityId: customers[2].id, action: "created", description: "New prospect added: Robert Chen (Nextdoor)" },
+      { projectId: projects[4].id, customerId: customers[4].id, userId: adminUser.id, entityType: "project", entityId: projects[4].id, action: "created", description: "Project created: Whispering Oaks Restoration" },
+      { projectId: projects[4].id, customerId: customers[4].id, userId: adminUser.id, entityType: "diagnosis", entityId: 3, action: "created", description: "Diagnosis completed — mildew + graying noted (Whispering Oaks)" },
+      { projectId: projects[4].id, customerId: customers[4].id, userId: adminUser.id, entityType: "job", entityId: jobs[2].id, action: "completed", description: "Power wash job completed — Whispering Oaks (3.5 hrs)" },
+      { projectId: projects[6].id, customerId: customers[7].id, userId: adminUser.id, entityType: "invoice", entityId: invoices[3].id, action: "paid", description: "Invoice USS-1003 paid in full — River Oaks ($1,948.50 via Zelle)" },
+      { projectId: projects[1].id, customerId: customers[1].id, userId: adminUser.id, entityType: "payment", entityId: 3, action: "received", description: "Deposit of $1,500.00 received for Ridgeline Estate (USS-1004)" },
+      { customerId: customers[4].id, userId: adminUser.id, entityType: "customer", entityId: customers[4].id, action: "created", description: "New active customer: Marcus Thompson (Google)" },
+      { customerId: customers[5].id, userId: adminUser.id, entityType: "customer", entityId: customers[5].id, action: "created", description: "New active customer: Diane Holloway (referral — James Anderson)" },
+      { projectId: projects[6].id, customerId: customers[7].id, userId: adminUser.id, entityType: "job", entityId: jobs[7].id, action: "completed", description: "River Oaks Day 2 complete — Helen Bradshaw signed off" },
+      { projectId: projects[3].id, customerId: customers[3].id, userId: adminUser.id, entityType: "job", entityId: jobs[5].id, action: "completed", description: "Pecan Street seal complete — Gutierrez very satisfied" },
     ]);
-
-    console.log("  Customers, properties, projects, diagnoses, invoices, jobs, and activity seeded");
+    console.log("  All data seeded");
   }
 
   console.log("Seed complete!");
