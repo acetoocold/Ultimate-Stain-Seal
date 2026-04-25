@@ -22,7 +22,6 @@ export const invoicesTable = pgTable("invoices", {
   disclaimerText: text("disclaimer_text"),
   customerSignature: text("customer_signature"),
   signedAt: timestamp("signed_at", { withTimezone: true }),
-  glideId: text("glide_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

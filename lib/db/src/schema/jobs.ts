@@ -17,10 +17,9 @@ export const jobsTable = pgTable("jobs", {
   actualEndTime: timestamp("actual_end_time", { withTimezone: true }),
   estimatedHours: numeric("estimated_hours", { precision: 6, scale: 2 }),
   actualHours: numeric("actual_hours", { precision: 6, scale: 2 }),
-  crewSize: integer("crew_size"),
+  extraHelpers: integer("extra_helpers").default(0),
   notes: text("notes"),
   completionNotes: text("completion_notes"),
-  glideId: text("glide_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

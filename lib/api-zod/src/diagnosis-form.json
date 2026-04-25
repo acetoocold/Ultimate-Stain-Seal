@@ -1,0 +1,593 @@
+{
+  "diagnosisForm": {
+    "title": "Fence Diagnosis Form",
+    "description": "Complete form for technician to assess fence condition and predict maintenance timeline",
+    "version": "1.0",
+    "lastUpdated": "2026-04-25"
+    },
+    "sections": [
+      {
+        "id": "context",
+        "title": "Customer & Project Context",
+        "description": "Link to customer and project",
+        "fields": [
+          {
+            "name": "customerId",
+            "label": "Customer",
+            "type": "select",
+            "required": true,
+            "placeholder": "Select customer...",
+            "validation": "required|number"
+          },
+          {
+            "name": "projectId",
+            "label": "Project (Optional)",
+            "type": "select",
+            "required": false,
+            "placeholder": "Select existing project or create new",
+            "hint": "Leave blank for standalone diagnosis"
+          },
+          {
+            "name": "diagnosedById",
+            "label": "Technician",
+            "type": "select",
+            "required": false,
+            "placeholder": "Who is performing diagnosis?"
+          }
+        ]
+      },
+      {
+        "id": "woodStructure",
+        "title": "Wood Type & Fence Structure",
+        "description": "What are we working with?",
+        "fields": [
+          {
+            "name": "woodType",
+            "label": "Wood Type",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "fence", "label": "Fence", "deduction": "-3 months" },
+              { "value": "pergola", "label": "Pergola", "deduction": "-2 months" },
+              { "value": "deck", "label": "Deck", "deduction": "-1 month" },
+              { "value": "dock", "label": "Dock", "deduction": "-2 months" },
+              { "value": "siding", "label": "Siding", "deduction": "-1 month" }
+            ],
+            "default": "fence"
+          },
+          {
+            "name": "fenceType",
+            "label": "Fence Style",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "wood_privacy", "label": "Wood Privacy" },
+              { "value": "side_by_side", "label": "Side by Side" },
+              { "value": "post_rail", "label": "Post & Rail" },
+              { "value": "split_rail", "label": "Split Rail" }
+            ],
+            "default": "wood_privacy"
+          },
+          {
+            "name": "postsCondition",
+            "label": "Posts Condition",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "excellent", "label": "Excellent", "deduction": "0 months" },
+              { "value": "good", "label": "Good", "deduction": "-1 month" },
+              { "value": "fair", "label": "Fair", "deduction": "-1 month" },
+              { "value": "poor", "label": "Poor", "deduction": "-3 months" },
+              { "value": "needs_repair", "label": "Needs Repair", "deduction": "-3 months" }
+            ],
+            "default": "fair",
+            "hint": "Posts assessed separately from fence"
+          }
+        ]
+      },
+      {
+        "id": "dimensions",
+        "title": "Dimensions & Measurements",
+        "description": "How big is the project?",
+        "fields": [
+          {
+            "name": "totalLinearFeet",
+            "label": "Total Linear Feet",
+            "type": "number",
+            "required": false,
+            "placeholder": "e.g., 150",
+            "hint": "Length of fence perimeter",
+            "validation": "min:0|max:10000"
+          },
+          {
+            "name": "averageHeight",
+            "label": "Average Height (feet)",
+            "type": "number",
+            "required": false,
+            "placeholder": "e.g., 6",
+            "hint": "Used to calculate sq ft",
+            "validation": "min:0|max:20"
+          },
+          {
+            "name": "numberOfSections",
+            "label": "Number of Sections",
+            "type": "number",
+            "required": false,
+            "placeholder": "e.g., 3",
+            "hint": "Separate fence sections"
+          },
+          {
+            "name": "numberOfPosts",
+            "label": "Number of Posts",
+            "type": "number",
+            "required": false,
+            "placeholder": "Optional"
+          },
+          {
+            "name": "numberOfGates",
+            "label": "Number of Gates",
+            "type": "number",
+            "required": false,
+            "placeholder": "Optional"
+          }
+        ]
+      },
+      {
+        "id": "sections",
+        "title": "Individual Sections",
+        "description": "Track different lengths/heights and which sides were done",
+        "fields": [
+          {
+            "name": "sections",
+            "label": "Fence Sections",
+            "type": "array",
+            "itemLabel": "Section",
+            "hint": "Add each section (rare: different lengths/heights, different sides stained)",
+            "itemFields": [
+              {
+                "name": "sectionNumber",
+                "label": "Section #",
+                "type": "number",
+                "required": true
+              },
+              {
+                "name": "linearFeet",
+                "label": "Linear Feet",
+                "type": "number",
+                "required": true
+              },
+              {
+                "name": "height",
+                "label": "Height (ft)",
+                "type": "number",
+                "required": true
+              },
+              {
+                "name": "sidesCompleted",
+                "label": "Sides Completed",
+                "type": "select",
+                "required": true,
+                "options": [
+                  { "value": "both", "label": "Both Sides" },
+                  { "value": "front", "label": "Front Only" },
+                  { "value": "back", "label": "Back Only" },
+                  { "value": "none", "label": "Not Done" }
+                ],
+                "default": "both"
+              },
+              {
+                "name": "sectionNotes",
+                "label": "Notes",
+                "type": "textarea",
+                "required": false,
+                "placeholder": "Section-specific notes..."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "history",
+        "title": "History & Timeline",
+        "description": "When was it last stained?",
+        "fields": [
+          {
+            "name": "lastStainedYear",
+            "label": "Last Stained Year",
+            "type": "number",
+            "required": true,
+            "placeholder": "e.g., 2021",
+            "validation": "min:2000|max:2026"
+          },
+          {
+            "name": "lastStainedYearIsExact",
+            "label": "Is this year exact or estimated?",
+            "type": "checkbox",
+            "hint": "Check if exact date known (more accurate health calculation)"
+          }
+        ]
+      },
+      {
+        "id": "currentState",
+        "title": "Current Condition",
+        "description": "What's the fence look like right now?",
+        "fields": [
+          {
+            "name": "currentFinish",
+            "label": "Current Finish",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "stain_and_sealed", "label": "Stain & Sealed", "deduction": "0 months" },
+              { "value": "bare", "label": "Bare (unstained)", "deduction": "-3 months" },
+              { "value": "weathered", "label": "Weathered", "deduction": "-1 month" }
+            ],
+            "default": "bare"
+          },
+          {
+            "name": "weatherExposure",
+            "label": "Weather Exposure",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "full_sun", "label": "Full Sun", "deduction": "-3 months" },
+              { "value": "partial_shade", "label": "Partial Shade", "deduction": "-1 month" },
+              { "value": "full_shade", "label": "Full Shade", "deduction": "0 months" },
+              { "value": "near_water", "label": "Near Water", "deduction": "-3 months" }
+            ],
+            "default": "partial_shade"
+          },
+          {
+            "name": "moistureLevel",
+            "label": "Moisture Level",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "dry", "label": "Dry", "deduction": "0 months" },
+              { "value": "normal", "label": "Normal", "deduction": "-1 month" },
+              { "value": "high", "label": "High", "deduction": "-3 months" },
+              { "value": "water_logged", "label": "Water Logged", "deduction": "-3 months" }
+            ],
+            "default": "normal"
+          }
+        ]
+      },
+      {
+        "id": "issues",
+        "title": "Condition Issues",
+        "description": "Any damage present? Each issue = -3 months from predicted sealing date",
+        "fields": [
+          {
+            "name": "moldMildew",
+            "label": "Mold or Mildew Present?",
+            "type": "checkbox",
+            "hint": "Fungal growth (-3 months from sealing date)",
+            "deduction": "-3 months"
+          },
+          {
+            "name": "cracking",
+            "label": "Wood Cracking?",
+            "type": "checkbox",
+            "hint": "Structural cracking (-3 months from sealing date)",
+            "deduction": "-3 months"
+          },
+          {
+            "name": "graying",
+            "label": "Wood Graying/Oxidation?",
+            "type": "checkbox",
+            "hint": "Gray weathering appearance (-3 months from sealing date)",
+            "deduction": "-3 months"
+          },
+          {
+            "name": "repairNeeded",
+            "label": "Repair Needed?",
+            "type": "checkbox",
+            "hint": "Structural repair required (-3 months from sealing date)",
+            "deduction": "-3 months"
+          },
+          {
+            "name": "repairNotes",
+            "label": "Repair Details",
+            "type": "textarea",
+            "placeholder": "Describe needed repairs...",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "products",
+        "title": "Recommended Products",
+        "description": "What should they use?",
+        "fields": [
+          {
+            "name": "recommendedBrand",
+            "label": "Recommended Brand",
+            "type": "text",
+            "defaultValue": "Ultimate Liquid Gold",
+            "hint": "Default: Ultimate Liquid Gold (no upcharge). Other brands add $50 upcharge."
+          },
+          {
+            "name": "recommendedProductType",
+            "label": "Product Type",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "stain", "label": "Stain" },
+              { "value": "seal", "label": "Seal" }
+            ],
+            "default": "stain"
+          },
+          {
+            "name": "recommendedCoats",
+            "label": "Number of Coats",
+            "type": "number",
+            "min": 1,
+            "max": 5,
+            "default": 2
+          },
+          {
+            "name": "productColor",
+            "label": "Color",
+            "type": "text",
+            "placeholder": "e.g., Honey, Cedar, Ebony, Natural"
+          },
+          {
+            "name": "prepRequired",
+            "label": "Prep Work Required",
+            "type": "select",
+            "required": true,
+            "options": [
+              { "value": "none", "label": "None" },
+              { "value": "light_cleaning", "label": "Light Cleaning" },
+              { "value": "power_wash", "label": "Power Wash" },
+              { "value": "sand", "label": "Sand" },
+              { "value": "scrape", "label": "Scrape" },
+              { "value": "bleach_treat", "label": "Bleach/Treat" }
+            ],
+            "default": "none"
+          },
+          {
+            "name": "careNotes",
+            "label": "Post-Application Care",
+            "type": "textarea",
+            "placeholder": "Care instructions for customer...",
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "estimates",
+        "title": "Cost Estimates (Auto-Calculated)",
+        "description": "Calculated from dimensions and settings",
+        "fields": [
+          {
+            "name": "estimatedProductGallons",
+            "label": "Estimated Gallons",
+            "type": "number",
+            "readonly": true,
+            "hint": "Calculated: sq ft ÷ coverage rate (450 sq ft/gal)"
+          },
+          {
+            "name": "estimatedLaborHours",
+            "label": "Estimated Labor Hours",
+            "type": "number",
+            "readonly": true,
+            "hint": "Calculated: sq ft ÷ coverage rate (150 sq ft/hr)"
+          },
+          {
+            "name": "estimatedMaterialCost",
+            "label": "Material Cost",
+            "type": "currency",
+            "readonly": true,
+            "hint": "Calculated: gallons × cost per gallon"
+          },
+          {
+            "name": "estimatedBrandUpsell",
+            "label": "Brand Upcharge",
+            "type": "currency",
+            "readonly": true,
+            "hint": "$50 if not using Ultimate Liquid Gold"
+          },
+          {
+            "name": "estimatedLaborCost",
+            "label": "Labor Cost",
+            "type": "currency",
+            "readonly": true,
+            "hint": "Calculated: hours × labor rate ($20/hr)"
+          },
+          {
+            "name": "estimatedTotal",
+            "label": "Total Estimate",
+            "type": "currency",
+            "readonly": true,
+            "hint": "Material + Labor + Brand Upcharge"
+          }
+        ]
+      },
+      {
+        "id": "health",
+        "title": "Health Score (Server-Calculated)",
+        "description": "Automatic calculation based on all factors",
+        "fields": [
+          {
+            "name": "nextPredictedSealingDate",
+            "label": "Next Predicted Sealing Date",
+            "type": "date",
+            "readonly": true,
+            "hint": "Calculated from 16 health factors"
+          },
+          {
+            "name": "healthStatus",
+            "label": "Health Status",
+            "type": "select",
+            "readonly": true,
+            "options": [
+              { "value": "ultimate_health", "label": "🟢 Ultimate Health (24+ months)" },
+              { "value": "good", "label": "🟡 Good (6-24 months)" },
+              { "value": "needs_attention", "label": "🟠 Needs Attention (0-6 months)" },
+              { "value": "permanent_damage_risk", "label": "🔴 Permanent Damage Risk (overdue)" }
+            ]
+          },
+          {
+            "name": "synchronizationStatus",
+            "label": "Synchronization Status",
+            "type": "select",
+            "readonly": true,
+            "options": [
+              { "value": "synchronized", "label": "Synchronized (all sections same age)" },
+              { "value": "needs_sync", "label": "Needs Sync (sections at different ages)" }
+            ],
+            "hint": "Alert: Consider batch re-staining for sections at different ages"
+          }
+        ]
+      }
+    ],
+    "calculations": {
+      "baseMonths": 48,
+      "factors": [
+        {
+          "name": "woodType",
+          "deductions": {
+            "fence": 3,
+            "pergola": 2,
+            "deck": 1,
+            "dock": 2,
+            "siding": 1
+          }
+        },
+        {
+          "name": "currentFinish",
+          "deductions": {
+            "bare": 3,
+            "weathered": 1,
+            "stain_and_sealed": 0
+          }
+        },
+        {
+          "name": "weatherExposure",
+          "deductions": {
+            "full_sun": 3,
+            "near_water": 3,
+            "partial_shade": 1,
+            "full_shade": 0
+          }
+        },
+        {
+          "name": "moistureLevel",
+          "deductions": {
+            "water_logged": 3,
+            "high": 3,
+            "normal": 1,
+            "dry": 0
+          }
+        },
+        {
+          "name": "moldMildew",
+          "deductions": {
+            "true": 3,
+            "false": 0
+          }
+        },
+        {
+          "name": "cracking",
+          "deductions": {
+            "true": 3,
+            "false": 0
+          }
+        },
+        {
+          "name": "graying",
+          "deductions": {
+            "true": 3,
+            "false": 0
+          }
+        },
+        {
+          "name": "repairNeeded",
+          "deductions": {
+            "true": 3,
+            "false": 0
+          }
+        },
+        {
+          "name": "postsCondition",
+          "deductions": {
+            "excellent": 0,
+            "good": 1,
+            "fair": 1,
+            "poor": 3,
+            "needs_repair": 3
+          }
+        }
+      ],
+      "healthStatusThresholds": {
+        "ultimate_health": 24,
+        "good": 6,
+        "needs_attention": 0,
+        "permanent_damage_risk": -1
+      }
+    },
+    "exampleData": {
+      "customerId": 12,
+      "projectId": 42,
+      "woodType": "fence",
+      "fenceType": "wood_privacy",
+      "postsCondition": "good",
+      "totalLinearFeet": 150,
+      "averageHeight": 6,
+      "numberOfSections": 3,
+      "numberOfPosts": 12,
+      "numberOfGates": 1,
+      "lastStainedYear": 2021,
+      "lastStainedYearIsExact": true,
+      "currentFinish": "bare",
+      "weatherExposure": "full_sun",
+      "moistureLevel": "normal",
+      "moldMildew": true,
+      "cracking": false,
+      "graying": true,
+      "repairNeeded": false,
+      "recommendedBrand": "Ultimate Liquid Gold",
+      "recommendedProductType": "stain",
+      "recommendedCoats": 2,
+      "productColor": "Honey",
+      "prepRequired": "power_wash",
+      "sections": [
+        {
+          "sectionNumber": 1,
+          "linearFeet": 60,
+          "height": 6,
+          "sidesCompleted": "both",
+          "sectionNotes": "Main front fence, good condition"
+        },
+        {
+          "sectionNumber": 2,
+          "linearFeet": 50,
+          "height": 6,
+          "sidesCompleted": "front",
+          "sectionNotes": "Side fence, front done 2020, back not done yet"
+        },
+        {
+          "sectionNumber": 3,
+          "linearFeet": 40,
+          "height": 5,
+          "sidesCompleted": "both",
+          "sectionNotes": "Back corner, shorter due to slope"
+        }
+      ],
+      "calculatedValues": {
+        "totalSqFt": 900,
+        "monthsRemaining": 26,
+        "nextPredictedSealingDate": "2024-06-01",
+        "healthStatus": "good",
+        "synchronizationStatus": "needs_sync",
+        "estimatedProductGallons": 2,
+        "estimatedLaborHours": 6,
+        "estimatedMaterialCost": 70,
+        "estimatedBrandUpsell": 0,
+        "estimatedLaborCost": 120,
+        "estimatedTotal": 190
+      }
+    }
+  }
+}

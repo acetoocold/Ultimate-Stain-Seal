@@ -10,11 +10,18 @@ interface PrintShellProps {
   children: React.ReactNode;
 }
 
-export function PrintShell({ backHref, backLabel = "Back", documentTitle, children }: PrintShellProps) {
+export function PrintShell({
+  backHref,
+  backLabel = "Back",
+  documentTitle,
+  children,
+}: PrintShellProps) {
   useEffect(() => {
     const prev = document.title;
     if (documentTitle) document.title = documentTitle;
-    return () => { document.title = prev; };
+    return () => {
+      document.title = prev;
+    };
   }, [documentTitle]);
 
   return (
@@ -125,7 +132,13 @@ export function FieldRow({
   );
 }
 
-export function CheckBox({ checked = false, label }: { checked?: boolean; label: string }) {
+export function CheckBox({
+  checked = false,
+  label,
+}: {
+  checked?: boolean;
+  label: string;
+}) {
   return (
     <label className="inline-flex items-center gap-1.5 mr-3 text-[9.5pt]">
       <span className={`blank-box ${checked ? "checked" : ""}`} />

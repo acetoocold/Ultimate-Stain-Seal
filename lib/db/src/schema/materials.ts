@@ -8,16 +8,18 @@ export const materialsTable = pgTable("materials", {
   sku: text("sku"),
   category: text("category").notNull().default("equipment"),
   trackingType: text("tracking_type").notNull().default("status"),
-  oilType: text("oil_type"),
+  liquidGoldColor: text("liquid_gold_color"), // dark_brown, medium_brown, light_brown
+  purchaseLocationId: integer("purchase_location_id"),
   containerCapacity: numeric("container_capacity", { precision: 10, scale: 2 }),
   brand: text("brand"),
   description: text("description"),
+  productImage: text("product_image"), // URL to product image for Liquid Gold and other items
   unitType: text("unit_type").notNull().default("each"),
   unitCost: numeric("unit_cost", { precision: 10, scale: 2 }),
   coveragePerUnit: numeric("coverage_per_unit", { precision: 10, scale: 2 }),
   coverageUnit: text("coverage_unit"),
   notes: text("notes"),
-  isActive: boolean("is_active").notNull().default(true),
+  activeStatus: text("active_status").notNull().default("active"), // active, needs_attention, inactive
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
@@ -48,6 +50,8 @@ export const projectMaterialsTable = pgTable("project_materials", {
   quantityUsed: numeric("quantity_used", { precision: 10, scale: 2 }),
   unitCostAtTime: numeric("unit_cost_at_time", { precision: 10, scale: 2 }),
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }),
+  sprayRatioPredicted: numeric("spray_ratio_predicted", { precision: 6, scale: 2 }), // Based on total_area / spray_ratio
+  totalAreaSqFt: numeric("total_area_sq_ft", { precision: 10, scale: 2 }), // For spray calculations
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

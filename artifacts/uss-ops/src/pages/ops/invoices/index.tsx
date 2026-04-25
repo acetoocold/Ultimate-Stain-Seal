@@ -2,7 +2,14 @@ import { Link } from "wouter";
 import { useListInvoices } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
@@ -12,8 +19,8 @@ export default function InvoicesList() {
   const [search, setSearch] = useState("");
   const { data: invoices, isLoading } = useListInvoices();
 
-  const filteredInvoices = invoices?.filter(i => 
-    i.invoiceNumber.toLowerCase().includes(search.toLowerCase())
+  const filteredInvoices = invoices?.filter((i) =>
+    i.invoiceNumber.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -58,25 +65,46 @@ export default function InvoicesList() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  Loading...
+                </TableCell>
+              </TableRow>
             ) : filteredInvoices?.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No invoices found</TableCell></TableRow>
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  No invoices found
+                </TableCell>
+              </TableRow>
             ) : (
               filteredInvoices?.map((invoice) => (
                 <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  <TableCell className="capitalize text-sm">{invoice.invoiceType.replace(/_/g, ' ')}</TableCell>
+                  <TableCell className="font-medium">
+                    {invoice.invoiceNumber}
+                  </TableCell>
+                  <TableCell className="capitalize text-sm">
+                    {invoice.invoiceType.replace(/_/g, " ")}
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={
-                      invoice.status === 'paid' ? 'default' : 
-                      invoice.status === 'overdue' ? 'destructive' : 
-                      'secondary'
-                    }>
+                    <Badge
+                      variant={
+                        invoice.status === "paid"
+                          ? "default"
+                          : invoice.status === "overdue"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
                       {invoice.status}
                     </Badge>
                   </TableCell>
                   <TableCell>${invoice.totalAmount.toLocaleString()}</TableCell>
-                  <TableCell className={`font-medium ${invoice.balanceDue > 0 ? 'text-destructive' : 'text-primary'}`}>
+                  <TableCell
+                    className={`font-medium ${invoice.balanceDue > 0 ? "text-destructive" : "text-primary"}`}
+                  >
                     ${invoice.balanceDue.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
