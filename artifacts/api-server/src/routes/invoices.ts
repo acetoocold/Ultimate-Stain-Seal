@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, invoicesTable, invoiceLineItemsTable, paymentsTable } from "@workspace/db";
+import { db, invoicesTable, invoiceLineItemsTable, paymentsTable, customersTable, projectsTable } from "@workspace/db";
 import {
   CreateInvoiceBody, UpdateInvoiceBody, GetInvoiceParams, UpdateInvoiceParams, DeleteInvoiceParams,
   UpdateInvoiceDisclaimerParams, UpdateInvoiceDisclaimerBody, ListInvoicesQueryParams,
@@ -98,12 +98,23 @@ router.get("/invoices/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, params.data.id));
   if (!invoice) { res.status(404).json({ error: "Invoice not found" }); return; }
-  const lineItems = await db.select().from(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoiceId, params.data.id));
-  const payments = await db.select().from(paymentsTable).where(eq(paymentsTable.invoiceId, params.data.id));
+  const [lineItems, payments] = await Promise.all([
+    db.select().from(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoiceId, params.data.id)),
+    db.select().from(paymentsTable).where(eq(paymentsTable.invoiceId, params.data.id)),
+  ]);
+  const [customer] = invoice.customerId
+    ? await db.select().from(customersTable).where(eq(customersTable.id, invoice.customerId))
+    : [undefined];
+  const [project] = invoice.projectId
+    ? await db.select().from(projectsTable).where(eq(projectsTable.id, invoice.projectId))
+    : [undefined];
   res.json({
     ...serializeInvoice(invoice),
     lineItems: lineItems.map(li => ({ ...li, createdAt: li.createdAt.toISOString() })),
     payments: payments.map(serializePayment),
+    customer: customer ? { ...customer, createdAt: customer.createdAt.toISOString(), updatedAt: customer.updatedAt.toISOString() } : null,
+    project: project ? { ...project, createdAt: project.createdAt.toISOString(), updatedAt: project.updatedAt.toISOString(),
+      scheduledDate: project.scheduledDate?.toISOString() ?? null, completedDate: project.completedDate?.toISOString() ?? null } : null,
   });
 });
 

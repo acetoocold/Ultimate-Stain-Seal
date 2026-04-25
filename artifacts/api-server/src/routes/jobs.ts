@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte } from "drizzle-orm";
-import { db, jobsTable, jobsheetsTable } from "@workspace/db";
+import { db, jobsTable, jobsheetsTable, projectsTable, customersTable } from "@workspace/db";
 import {
   CreateJobBody, UpdateJobBody, GetJobParams, UpdateJobParams, DeleteJobParams,
   UpdateJobStatusParams, UpdateJobStatusBody, ListJobsQueryParams,
@@ -43,8 +43,18 @@ router.get("/jobs/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
   if (!job) { res.status(404).json({ error: "Job not found" }); return; }
-  const jobsheets = await db.select().from(jobsheetsTable).where(eq(jobsheetsTable.jobId, params.data.id));
-  res.json({ ...serializeJob(job), jobsheets: jobsheets.map(serializeJobsheet) });
+  const [jobsheets, project, customer] = await Promise.all([
+    db.select().from(jobsheetsTable).where(eq(jobsheetsTable.jobId, params.data.id)),
+    job.projectId ? db.select().from(projectsTable).where(eq(projectsTable.id, job.projectId)).then(r => r[0]) : Promise.resolve(undefined),
+    job.customerId ? db.select().from(customersTable).where(eq(customersTable.id, job.customerId)).then(r => r[0]) : Promise.resolve(undefined),
+  ]);
+  res.json({
+    ...serializeJob(job),
+    jobsheets: jobsheets.map(serializeJobsheet),
+    project: project ? { ...project, createdAt: project.createdAt.toISOString(), updatedAt: project.updatedAt.toISOString(),
+      scheduledDate: project.scheduledDate?.toISOString() ?? null, completedDate: project.completedDate?.toISOString() ?? null } : null,
+    customer: customer ? { ...customer, createdAt: customer.createdAt.toISOString(), updatedAt: customer.updatedAt.toISOString() } : null,
+  });
 });
 
 router.patch("/jobs/:id", async (req, res): Promise<void> => {

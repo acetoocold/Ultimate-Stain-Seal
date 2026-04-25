@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { db, diagnosesTable, settingsTable } from "@workspace/db";
+import { db, diagnosesTable, settingsTable, customersTable, projectsTable } from "@workspace/db";
 import {
   CreateDiagnosisBody, UpdateDiagnosisBody, GetDiagnosisParams, UpdateDiagnosisParams,
   CalculateDiagnosisParams, ListDiagnosesQueryParams,
@@ -36,7 +36,18 @@ router.get("/diagnoses/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const [diagnosis] = await db.select().from(diagnosesTable).where(eq(diagnosesTable.id, params.data.id));
   if (!diagnosis) { res.status(404).json({ error: "Diagnosis not found" }); return; }
-  res.json(serializeDiagnosis(diagnosis));
+  const [customer] = diagnosis.customerId
+    ? await db.select().from(customersTable).where(eq(customersTable.id, diagnosis.customerId))
+    : [undefined];
+  const [project] = diagnosis.projectId
+    ? await db.select().from(projectsTable).where(eq(projectsTable.id, diagnosis.projectId))
+    : [undefined];
+  res.json({
+    ...serializeDiagnosis(diagnosis),
+    customer: customer ? { ...customer, createdAt: customer.createdAt.toISOString(), updatedAt: customer.updatedAt.toISOString() } : null,
+    project: project ? { ...project, createdAt: project.createdAt.toISOString(), updatedAt: project.updatedAt.toISOString(),
+      scheduledDate: project.scheduledDate?.toISOString() ?? null, completedDate: project.completedDate?.toISOString() ?? null } : null,
+  });
 });
 
 router.patch("/diagnoses/:id", async (req, res): Promise<void> => {

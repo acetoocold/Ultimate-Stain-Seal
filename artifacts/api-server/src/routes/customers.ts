@@ -43,6 +43,7 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
   const properties = await db.select().from(propertiesTable).where(eq(propertiesTable.customerId, params.data.id));
   const projects = await db.select().from(projectsTable).where(eq(projectsTable.customerId, params.data.id));
   const invoices = await db.select().from(invoicesTable).where(eq(invoicesTable.customerId, params.data.id));
+  const jobs = await db.select().from(jobsTable).where(eq(jobsTable.customerId, params.data.id));
   res.json({
     ...serializeCustomer(customer),
     properties: properties.map(p => ({ ...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString() })),
@@ -50,6 +51,8 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
       scheduledDate: p.scheduledDate?.toISOString() ?? null, completedDate: p.completedDate?.toISOString() ?? null })),
     invoices: invoices.map(i => ({ ...i, createdAt: i.createdAt.toISOString(), updatedAt: i.updatedAt.toISOString(),
       dueDate: i.dueDate?.toISOString() ?? null, signedAt: i.signedAt?.toISOString() ?? null })),
+    jobs: jobs.map(j => ({ ...j, createdAt: j.createdAt.toISOString(), updatedAt: j.updatedAt.toISOString(),
+      scheduledDate: j.scheduledDate?.toISOString() ?? null, actualStartTime: j.actualStartTime?.toISOString() ?? null, actualEndTime: j.actualEndTime?.toISOString() ?? null })),
   });
 });
 

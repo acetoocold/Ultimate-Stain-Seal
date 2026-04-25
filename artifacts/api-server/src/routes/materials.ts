@@ -13,7 +13,10 @@ function serializeMaterial(m: typeof materialsTable.$inferSelect) {
   return { ...m, createdAt: m.createdAt.toISOString(), updatedAt: m.updatedAt.toISOString() };
 }
 function serializeInventory(i: typeof inventoryItemsTable.$inferSelect, material: typeof materialsTable.$inferSelect) {
-  return { ...i, createdAt: i.createdAt.toISOString(), updatedAt: i.updatedAt.toISOString(), lastRestockedAt: i.lastRestockedAt?.toISOString() ?? null, material: serializeMaterial(material) };
+  return { ...i, createdAt: i.createdAt.toISOString(), updatedAt: i.updatedAt.toISOString(),
+    lastRestockedAt: i.lastRestockedAt?.toISOString() ?? null,
+    lastCheckedAt: i.lastCheckedAt?.toISOString() ?? null,
+    material: serializeMaterial(material) };
 }
 
 router.get("/materials", async (req, res): Promise<void> => {
@@ -86,6 +89,15 @@ router.post("/inventory", async (req, res): Promise<void> => {
   res.status(201).json(serializeInventory(item, material));
 });
 
+router.get("/inventory/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const [item] = await db.select().from(inventoryItemsTable).where(eq(inventoryItemsTable.id, id));
+  if (!item) { res.status(404).json({ error: "Inventory item not found" }); return; }
+  const [material] = await db.select().from(materialsTable).where(eq(materialsTable.id, item.materialId));
+  res.json(serializeInventory(item, material));
+});
+
 router.patch("/inventory/:id", async (req, res): Promise<void> => {
   const params = UpdateInventoryItemParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -94,6 +106,7 @@ router.patch("/inventory/:id", async (req, res): Promise<void> => {
   const data: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(parsed.data)) { if (v !== null && v !== undefined) data[k] = v; }
   if (data.lastRestockedAt) data.lastRestockedAt = new Date(data.lastRestockedAt as string);
+  if (data.lastCheckedAt) data.lastCheckedAt = new Date(data.lastCheckedAt as string);
   const [item] = await db.update(inventoryItemsTable).set(data).where(eq(inventoryItemsTable.id, params.data.id)).returning();
   if (!item) { res.status(404).json({ error: "Inventory item not found" }); return; }
   const [material] = await db.select().from(materialsTable).where(eq(materialsTable.id, item.materialId));
