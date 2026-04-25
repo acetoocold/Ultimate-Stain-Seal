@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ClipboardList, Calendar, User, CloudSun, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Calendar, User, CloudSun, CheckCircle2, AlertCircle, Printer } from "lucide-react";
 import { format } from "date-fns";
 
 export default function JobsheetDetail() {
@@ -29,6 +29,11 @@ export default function JobsheetDetail() {
             {js.workDate ? format(new Date(js.workDate), "MMMM d, yyyy") : "No date recorded"}
           </p>
         </div>
+        <Button variant="outline" size="sm" asChild data-testid="button-print-jobsheet">
+          <Link href={`/ops/jobsheets/${js.id}/print`}>
+            <Printer className="w-4 h-4 mr-1" />Print Work Order
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

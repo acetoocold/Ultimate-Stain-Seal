@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Ruler, AlertTriangle, CheckCircle2, Wrench } from "lucide-react";
+import { ArrowLeft, Ruler, AlertTriangle, CheckCircle2, Wrench, Printer } from "lucide-react";
 import { format } from "date-fns";
 
 const CONDITION_COLOR: Record<string, string> = {
@@ -46,6 +46,11 @@ export default function DiagnosisDetail() {
             {diagnosis.diagnosedAt ? `Diagnosed ${format(new Date(diagnosis.diagnosedAt), "MMMM d, yyyy")}` : "Diagnosis pending"}
           </p>
         </div>
+        <Button variant="outline" size="sm" asChild data-testid="button-print-diagnosis">
+          <Link href={`/ops/diagnosis/${diagnosis.id}/print`}>
+            <Printer className="w-4 h-4 mr-1" />Print Form
+          </Link>
+        </Button>
         <Button asChild size="sm">
           <Link href={`/ops/projects/${diagnosis.projectId}`}>View Project</Link>
         </Button>

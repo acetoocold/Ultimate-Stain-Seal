@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, CheckCircle2, DollarSign, Printer } from "lucide-react";
 import { format } from "date-fns";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -46,6 +46,11 @@ export default function InvoiceDetail() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild data-testid="button-print-invoice">
+            <Link href={`/ops/invoices/${invoice.id}/print`}>
+              <Printer className="w-4 h-4 mr-1" />Print
+            </Link>
+          </Button>
           {invoice.status === "draft" && <Button size="sm">Send Invoice</Button>}
           {invoice.status !== "paid" && invoice.status !== "void" && (
             <Button size="sm" variant="outline">

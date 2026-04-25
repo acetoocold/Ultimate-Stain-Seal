@@ -35,6 +35,9 @@ import MaterialsPage from "@/pages/ops/materials";
 import JobsheetsPage from "@/pages/ops/jobsheets";
 import JobsheetDetail from "@/pages/ops/jobsheets/detail";
 import NewJobsheet from "@/pages/ops/jobsheets/new";
+import JobsheetPrint from "@/pages/ops/jobsheets/print";
+import DiagnosisPrint from "@/pages/ops/diagnosis/print";
+import InvoicePrint from "@/pages/ops/invoices/print";
 
 import DocumentsPage from "@/pages/ops/documents";
 import ReportsDashboard from "@/pages/ops/reports";
@@ -99,6 +102,11 @@ function Router() {
 
       {/* Employee/Admin Routes */}
       <Route path="/ops/login" component={OpsLogin} />
+
+      {/* Standalone print routes (rendered outside the OpsLayout chrome) */}
+      <Route path="/ops/jobsheets/:id/print" component={JobsheetPrint} />
+      <Route path="/ops/diagnosis/:id/print" component={DiagnosisPrint} />
+      <Route path="/ops/invoices/:id/print" component={InvoicePrint} />
 
       <Route path="/ops/*">
         <OpsLayout>
