@@ -61,14 +61,6 @@ export default function JobsheetPrint() {
   const isConcrete = /concrete/i.test(projectType);
   const isOther = projectType && !isFence && !isDeck && !isPergola && !isSiding && !isConcrete;
 
-  if (!js) {
-    return (
-      <PrintShell backHref={`/ops/jobsheets`}>
-        <div className="text-center text-neutral-500 py-12">Loading work order...</div>
-      </PrintShell>
-    );
-  }
-
   return (
     <PrintShell
       backHref={`/ops/jobsheets/${id}`}
