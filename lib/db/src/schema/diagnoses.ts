@@ -4,8 +4,9 @@ import { z } from "zod/v4";
 
 export const diagnosesTable = pgTable("diagnoses", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").notNull(),
+  projectId: integer("project_id"),
   customerId: integer("customer_id").notNull(),
+  woodType: text("wood_type").notNull().default("fence"),
   fenceType: text("fence_type").notNull().default("wood_privacy"),
   fenceCondition: text("fence_condition").notNull().default("fair"),
   totalLinearFeet: numeric("total_linear_feet", { precision: 10, scale: 2 }),
@@ -24,7 +25,9 @@ export const diagnosesTable = pgTable("diagnoses", {
   repairNeeded: boolean("repair_needed"),
   repairNotes: text("repair_notes"),
   recommendedProduct: text("recommended_product"),
+  recommendedProductType: text("recommended_product_type"),
   recommendedCoats: integer("recommended_coats"),
+  productColor: text("product_color"),
   prepRequired: text("prep_required"),
   careNotes: text("care_notes"),
   estimatedProductGallons: numeric("estimated_product_gallons", { precision: 10, scale: 2 }),

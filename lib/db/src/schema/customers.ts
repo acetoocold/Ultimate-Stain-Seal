@@ -8,6 +8,7 @@ export const customersTable = pgTable("customers", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
+  emailCategory: text("email_category").default("personal"),
   phone: text("phone"),
   phone2: text("phone2"),
   status: text("status").notNull().default("lead"),
