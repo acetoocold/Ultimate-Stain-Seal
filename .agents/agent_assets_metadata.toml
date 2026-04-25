@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "vhXWqPm58TcKRHeMeXNtS"
+uri = "file://artifacts/uss-ops/src/assets/login-fence-bg.png"
+type = "image"
+title = "fence background"
