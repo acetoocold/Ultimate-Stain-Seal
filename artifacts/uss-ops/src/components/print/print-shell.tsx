@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, Printer } from "lucide-react";
+import ussLogo from "@assets/5C78B988-D51E-4DDC-93EC-03F01BF9B178_1777081283693.png";
 
 interface PrintShellProps {
   backHref: string;
@@ -59,9 +60,12 @@ export function PrintHeader({
   return (
     <div className="flex items-start justify-between border-b-2 border-black pb-3 mb-4">
       <div className="flex items-center gap-3">
-        <div className="w-16 h-16 rounded-full border-2 border-[hsl(20,75%,28%)] bg-[hsl(38,40%,92%)] flex items-center justify-center">
-          <span className="text-[hsl(20,75%,28%)] font-black text-2xl">USS</span>
-        </div>
+        <img
+          src={ussLogo}
+          alt="Ultimate Stain and Seal"
+          className="w-16 h-16 object-contain"
+          data-testid="img-print-logo"
+        />
         <div>
           <div className="font-black text-[15pt] tracking-tight text-[hsl(20,75%,28%)] leading-none">
             ULTIMATE STAIN AND SEAL
@@ -75,7 +79,8 @@ export function PrintHeader({
         <div className="font-semibold">(214) 555-0142</div>
         <div>info@ultimatestainandseal.com</div>
         <div>www.ultimatestainandseal.com</div>
-        <div>Proudly Serving North Texas</div>
+        <div>P.O. Box 1284, McKinney, TX 75070</div>
+        <div className="italic mt-0.5">Proudly Serving North Texas</div>
       </div>
     </div>
   );

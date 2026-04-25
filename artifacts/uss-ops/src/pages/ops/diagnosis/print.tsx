@@ -1,7 +1,13 @@
 import { useParams } from "wouter";
-import { useGetDiagnosis, useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
+import {
+  useGetDiagnosis,
+  useGetProject,
+  getGetDiagnosisQueryKey,
+  getGetProjectQueryKey,
+} from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { PrintShell, PrintHeader, SectionTitle, FieldRow, CheckBox, PrintFooter } from "@/components/print/print-shell";
+import type { DiagnosisWithRelations, ProjectDetailView } from "@/components/print/view-models";
 
 const conditionScale = ["Excellent", "Good", "Fair", "Poor"];
 
@@ -34,13 +40,16 @@ export default function DiagnosisPrint() {
   const { id } = useParams<{ id: string }>();
   const numericId = parseInt(id ?? "");
   const validId = Number.isFinite(numericId) && numericId > 0;
-  const { data: dx, isLoading, isError } = useGetDiagnosis(validId ? numericId : 0, {
-    query: { enabled: validId },
-  } as any);
+  const safeId = validId ? numericId : 0;
+  const { data: dxRaw, isLoading, isError } = useGetDiagnosis(safeId, {
+    query: { enabled: validId, queryKey: getGetDiagnosisQueryKey(safeId) },
+  });
+  const dx = dxRaw as DiagnosisWithRelations | undefined;
   const projectId = dx?.projectId;
-  const { data: project } = useGetProject(projectId ?? 0, {
+  const { data: projectRaw } = useGetProject(projectId ?? 0, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId ?? 0) },
   });
+  const project = projectRaw as ProjectDetailView | undefined;
 
   if (!validId) {
     return (
@@ -64,9 +73,8 @@ export default function DiagnosisPrint() {
     );
   }
 
-  const dxAny = dx as any;
-  const customer = dxAny.customer;
-  const property = (project as any)?.property;
+  const customer = dx.customer ?? project?.customer;
+  const property = project?.property ?? null;
   const customerName = customer ? `${customer.firstName} ${customer.lastName}` : "";
   const propertyAddr = property?.address ?? "";
   const propertyCSZ = property ? `${property.city ?? ""}, ${property.state ?? ""} ${property.zip ?? ""}`.trim() : "";
@@ -76,10 +84,12 @@ export default function DiagnosisPrint() {
   const isFence = ft.includes("wood") || ft.includes("vinyl") || ft.includes("chain") || ft.includes("aluminum") || ft.includes("composite") || ft.includes("split_rail");
 
   // Map booleans to source-diagnosis status (true => attention)
-  const moldStatus = dx.moldMildew ? "attention" : "good";
-  const grayStatus = dx.graying ? "attention" : "good";
-  const crackStatus = dx.cracking ? "attention" : "good";
-  const repairStatus = dx.repairNeeded ? "attention" : "good";
+  const sourceStatus = (flag: boolean | null | undefined): "good" | "attention" =>
+    flag ? "attention" : "good";
+  const moldStatus = sourceStatus(dx.moldMildew);
+  const grayStatus = sourceStatus(dx.graying);
+  const crackStatus = sourceStatus(dx.cracking);
+  const repairStatus = sourceStatus(dx.repairNeeded);
   const moistureLevel = (dx.moistureLevel ?? "").toLowerCase();
   const moistureStatus = moistureLevel === "high" ? "attention" : moistureLevel === "medium" ? "watch" : "good";
 
@@ -102,11 +112,20 @@ export default function DiagnosisPrint() {
       <SectionTitle number={1} title="Customer & Property Profile" />
       <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
         <FieldRow label="Diagnosis Date" value={dx.diagnosedAt ? format(new Date(dx.diagnosedAt), "MM/dd/yyyy") : ""} />
-        <FieldRow label="Referred By" value="" />
+        <FieldRow label="Referred By" value={customer?.leadSourceDetail ?? ""} />
         <FieldRow label="Customer Name" value={customerName} />
         <FieldRow label="Phone" value={customer?.phone ?? ""} />
         <FieldRow label="Email" value={customer?.email ?? ""} />
-        <FieldRow label="Preferred Contact" value="" />
+        <div className="flex items-baseline gap-2" data-testid="row-preferred-contact">
+          <span className="text-[8.5pt] font-semibold uppercase text-neutral-700 whitespace-nowrap">
+            Preferred Contact:
+          </span>
+          <span className="flex items-center">
+            <CheckBox label="Phone" />
+            <CheckBox label="Text" />
+            <CheckBox label="Email" />
+          </span>
+        </div>
         <FieldRow label="Property Address" value={propertyAddr} className="col-span-2" />
         <FieldRow label="City / State / ZIP" value={propertyCSZ} />
         <FieldRow label="Property Type" value={property?.propertyType ?? ""} />
@@ -124,12 +143,12 @@ export default function DiagnosisPrint() {
         <CheckBox label="Other" />
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-        <FieldRow label="Surface Material" value={dxAny.woodType ?? dx.fenceType?.replace(/_/g, " ")} />
+        <FieldRow label="Surface Material" value={dx.woodType ?? dx.fenceType?.replace(/_/g, " ")} />
         <FieldRow label="Approx. Square Footage" value={dx.totalSqFt ?? ""} />
         <FieldRow label="Age of Surface (years)" value={dx.lastStainedYear ? `${new Date().getFullYear() - dx.lastStainedYear}` : ""} />
         <FieldRow label="Previous Product Used" value={dx.currentFinish ?? ""} />
         <FieldRow label="Last Service Date" value={dx.lastStainedYear ? `${dx.lastStainedYear}` : ""} />
-        <FieldRow label="Desired Color / Finish" value={dxAny.productColor ?? ""} />
+        <FieldRow label="Desired Color / Finish" value={dx.productColor ?? ""} />
       </div>
 
       {/* Section 3: Source Diagnosis */}
@@ -142,11 +161,11 @@ export default function DiagnosisPrint() {
       <SourceDiagnosisRow label="Drainage Issues" />
       <SourceDiagnosisRow label="Sprinkler Contact" />
       <SourceDiagnosisRow label="Vegetation Contact" />
-      <SourceDiagnosisRow label="Mold / Mildew" status={moldStatus as any} />
-      <SourceDiagnosisRow label="Gray Weathering" status={grayStatus as any} />
-      <SourceDiagnosisRow label="Peeling / Failure" status={crackStatus as any} />
+      <SourceDiagnosisRow label="Mold / Mildew" status={moldStatus} />
+      <SourceDiagnosisRow label="Gray Weathering" status={grayStatus} />
+      <SourceDiagnosisRow label="Peeling / Failure" status={crackStatus} />
       <SourceDiagnosisRow label="Absorption Condition" />
-      <SourceDiagnosisRow label="Repair Needs" status={repairStatus as any} />
+      <SourceDiagnosisRow label="Repair Needs" status={repairStatus} />
 
       {/* Section 4: Condition Snapshot */}
       <SectionTitle number={4} title="Condition Snapshot" />
@@ -195,7 +214,7 @@ export default function DiagnosisPrint() {
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
         <FieldRow label="Recommended Product System" value={dx.recommendedProduct ?? ""} />
-        <FieldRow label="Color Notes" value={dxAny.productColor ?? ""} />
+        <FieldRow label="Color Notes" value={dx.productColor ?? ""} />
         <FieldRow label="Number of Coats" value={dx.recommendedCoats ?? ""} />
         <FieldRow label="Target Service Window" value="" />
         <FieldRow label="Follow-Up Recommendation" value={dx.careNotes ?? ""} className="col-span-2" />

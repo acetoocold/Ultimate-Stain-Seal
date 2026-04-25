@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useParams } from "wouter";
-import { useGetInvoice, useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
+import {
+  useGetInvoice,
+  useGetProject,
+  getGetInvoiceQueryKey,
+  getGetProjectQueryKey,
+} from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { PrintShell, PrintHeader, SectionTitle, FieldRow, CheckBox, PrintFooter } from "@/components/print/print-shell";
+import type { InvoiceDetailWithRelations, ProjectDetailView } from "@/components/print/view-models";
 
 const HARD_DISCLAIMER = `NOTICE: Exterior oil-based stain and seal products may cause minor incidental misting or overspray on adjacent surfaces such as concrete, siding, windows, vehicles, and landscaping. Ultimate Stain and Seal applies industry-standard masking, drop cloths, and overspray protection on every job; however, microscopic particles may still settle on surfaces near the work area. By signing this invoice the customer acknowledges that USS has reviewed protective measures, that incidental contact with adjacent surfaces is not considered damage under the terms of this contract, and that any post-completion staining of adjacent surfaces requested by the customer will be performed at the customer's expense.`;
 
@@ -12,14 +18,17 @@ export default function InvoicePrint() {
   const { id } = useParams<{ id: string }>();
   const numericId = parseInt(id ?? "");
   const validId = Number.isFinite(numericId) && numericId > 0;
-  const { data: invoice, isLoading, isError } = useGetInvoice(validId ? numericId : 0, {
-    query: { enabled: validId },
-  } as any);
+  const safeId = validId ? numericId : 0;
+  const { data: invoiceRaw, isLoading, isError } = useGetInvoice(safeId, {
+    query: { enabled: validId, queryKey: getGetInvoiceQueryKey(safeId) },
+  });
+  const invoice = invoiceRaw as InvoiceDetailWithRelations | undefined;
   const projectId = invoice?.projectId;
-  const { data: project } = useGetProject(projectId ?? 0, {
+  const { data: projectRaw } = useGetProject(projectId ?? 0, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId ?? 0) },
   });
-  const isHardMode = (invoice as any)?.disclaimerMode === "hard";
+  const project = projectRaw as ProjectDetailView | undefined;
+  const isHardMode = invoice?.disclaimerMode === "hard";
 
   if (!validId) {
     return (
@@ -46,28 +55,36 @@ export default function InvoicePrint() {
   return <InvoicePrintBody invoice={invoice} project={project} isHardMode={isHardMode} id={id} />;
 }
 
-function InvoicePrintBody({ invoice, project, isHardMode, id }: { invoice: any; project: any; isHardMode: boolean; id: string }) {
-  const [includeMigration, setIncludeMigration] = useState(isHardMode);
+interface InvoiceBodyProps {
+  invoice: InvoiceDetailWithRelations;
+  project: ProjectDetailView | undefined;
+  isHardMode: boolean;
+  id: string;
+}
 
-  const customer = (invoice as any).customer ?? (project as any)?.customer;
-  const property = (project as any)?.property;
-  const invoiceProject = (invoice as any).project ?? project;
+function InvoicePrintBody({ invoice, project, isHardMode, id }: InvoiceBodyProps) {
+  const [includeMigration, setIncludeMigration] = useState(true);
+
+  const customer = invoice.customer ?? project?.customer;
+  const property = project?.property ?? null;
+  const invoiceProject = invoice.project ?? project;
 
   const customerName = customer ? `${customer.firstName} ${customer.lastName}` : "";
   const billingAddress = property
-    ? `${property.address}\n${property.city}, ${property.state} ${property.zip}`
+    ? `${property.address ?? ""}\n${property.city ?? ""}, ${property.state ?? ""} ${property.zip ?? ""}`
     : "";
 
-  const lineItems: any[] = (invoice as any).lineItems ?? [];
-  const payments: any[] = (invoice as any).payments ?? [];
+  const lineItems = invoice.lineItems ?? [];
+  const payments = invoice.payments ?? [];
 
-  const subtotal = parseFloat(invoice.subtotal?.toString() ?? "0");
-  const taxRate = parseFloat(invoice.taxRate?.toString() ?? "0");
-  const taxAmount = parseFloat(invoice.taxAmount?.toString() ?? "0");
-  const discount = parseFloat(invoice.discountAmount?.toString() ?? "0");
-  const total = parseFloat(invoice.totalAmount?.toString() ?? "0");
-  const paid = parseFloat(invoice.paidAmount?.toString() ?? "0");
-  const balance = parseFloat(invoice.balanceDue?.toString() ?? "0");
+  const toNum = (v: number | string | null | undefined) => parseFloat(v?.toString() ?? "0");
+  const subtotal = toNum(invoice.subtotal);
+  const taxRate = toNum(invoice.taxRate);
+  const taxAmount = toNum(invoice.taxAmount);
+  const discount = toNum(invoice.discountAmount);
+  const total = toNum(invoice.totalAmount);
+  const paid = toNum(invoice.paidAmount);
+  const balance = toNum(invoice.balanceDue);
 
   const lastPayment = payments[payments.length - 1];
   const lastMethod = lastPayment?.paymentMethod ?? "";
@@ -128,9 +145,9 @@ function InvoicePrintBody({ invoice, project, isHardMode, id }: { invoice: any; 
       <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
         <FieldRow label="Service Address" value={property?.address ?? ""} className="col-span-2" />
         <FieldRow label="City / State / ZIP" value={property ? `${property.city}, ${property.state} ${property.zip}` : ""} />
-        <FieldRow label="Project Type" value={(invoiceProject as any)?.serviceType ?? ""} />
+        <FieldRow label="Project Type" value={invoiceProject?.serviceType ?? ""} />
         <FieldRow label="Crew Lead" value="" />
-        <FieldRow label="Date of Service" value={(invoiceProject as any)?.completedDate ? format(new Date((invoiceProject as any).completedDate), "MM/dd/yyyy") : ""} />
+        <FieldRow label="Date of Service" value={invoiceProject?.completedDate ? format(new Date(invoiceProject!.completedDate), "MM/dd/yyyy") : ""} />
         <FieldRow label="Stain Color" value="" />
         <FieldRow label="Product Used" value="" />
       </div>

@@ -1,19 +1,27 @@
 import { useParams } from "wouter";
-import { useGetJobsheet, useGetProject, getGetProjectQueryKey } from "@workspace/api-client-react";
+import {
+  useGetJobsheet,
+  useGetProject,
+  getGetJobsheetQueryKey,
+  getGetProjectQueryKey,
+} from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { PrintShell, PrintHeader, SectionTitle, FieldRow, CheckBox, PrintFooter } from "@/components/print/print-shell";
+import type { ProjectDetailView } from "@/components/print/view-models";
 
 export default function JobsheetPrint() {
   const { id } = useParams<{ id: string }>();
   const numericId = parseInt(id ?? "");
   const validId = Number.isFinite(numericId) && numericId > 0;
-  const { data: js, isLoading, isError } = useGetJobsheet(validId ? numericId : 0, {
-    query: { enabled: validId },
-  } as any);
+  const safeId = validId ? numericId : 0;
+  const { data: js, isLoading, isError } = useGetJobsheet(safeId, {
+    query: { enabled: validId, queryKey: getGetJobsheetQueryKey(safeId) },
+  });
   const projectId = js?.projectId;
-  const { data: project } = useGetProject(projectId ?? 0, {
+  const { data: projectRaw } = useGetProject(projectId ?? 0, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId ?? 0) },
   });
+  const project = projectRaw as ProjectDetailView | undefined;
 
   if (!validId) {
     return (
@@ -37,15 +45,15 @@ export default function JobsheetPrint() {
     );
   }
 
-  const customer = (project as any)?.customer;
-  const property = (project as any)?.property;
+  const customer = project?.customer;
+  const property = project?.property;
   const customerName = customer ? `${customer.firstName} ${customer.lastName}` : "";
   const customerPhone = customer?.phone ?? "";
   const fullAddress = property
     ? `${property.address}, ${property.city}, ${property.state} ${property.zip}`
     : "";
 
-  const projectType = (project as any)?.serviceType ?? "";
+  const projectType = project?.serviceType ?? "";
   const isFence = /fence/i.test(projectType);
   const isDeck = /deck/i.test(projectType);
   const isPergola = /pergola/i.test(projectType);
