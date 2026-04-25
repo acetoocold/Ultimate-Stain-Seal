@@ -5,6 +5,7 @@ import {
   useGetProject,
   getGetInvoiceQueryKey,
   getGetProjectQueryKey,
+  type InvoiceLineItem,
 } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { PrintShell, PrintHeader, SectionTitle, FieldRow, CheckBox, PrintFooter } from "@/components/print/print-shell";
@@ -167,12 +168,12 @@ function InvoicePrintBody({ invoice, project, isHardMode, id }: InvoiceBodyProps
           {lineItems.length === 0 ? (
             <tr><td colSpan={4} className="border border-black px-2 py-3 text-center text-neutral-500">No line items</td></tr>
           ) : (
-            lineItems.map((li: any) => (
+            lineItems.map((li: InvoiceLineItem) => (
               <tr key={li.id} className="align-top">
                 <td className="border border-black px-2 py-1">{li.description}</td>
-                <td className="border border-black px-2 py-1 text-right">{parseFloat(li.quantity?.toString() ?? "1").toFixed(2)}</td>
-                <td className="border border-black px-2 py-1 text-right">${parseFloat(li.unitPrice?.toString() ?? "0").toFixed(2)}</td>
-                <td className="border border-black px-2 py-1 text-right">${parseFloat(li.lineTotal?.toString() ?? "0").toFixed(2)}</td>
+                <td className="border border-black px-2 py-1 text-right">{toNum(li.quantity).toFixed(2)}</td>
+                <td className="border border-black px-2 py-1 text-right">${toNum(li.unitPrice).toFixed(2)}</td>
+                <td className="border border-black px-2 py-1 text-right">${toNum(li.lineTotal).toFixed(2)}</td>
               </tr>
             ))
           )}
@@ -200,9 +201,9 @@ function InvoicePrintBody({ invoice, project, isHardMode, id }: InvoiceBodyProps
           )}
           <div className="flex justify-between border-b border-neutral-300 py-1"><span>Deposit Received</span><span>$_______</span></div>
           <div className="flex justify-between border-b border-neutral-300 py-1"><span>Adjustment</span><span>$_______</span></div>
-          <div className="flex justify-between border-y-2 border-black py-1.5 my-1 font-bold text-[11pt]"><span>BALANCE DUE</span><span>${total.toFixed(2)}</span></div>
+          <div className="flex justify-between border-y-2 border-black py-1.5 my-1 font-bold text-[11pt]"><span>TOTAL</span><span>${total.toFixed(2)}</span></div>
           <div className="flex justify-between border-b border-neutral-300 py-1"><span>Amount Paid Today</span><span>${paid.toFixed(2)}</span></div>
-          <div className="flex justify-between border-y-2 border-black py-1.5 mt-1 font-bold text-[12pt] bg-[hsl(38,40%,92%)] px-1"><span>REMAINING BALANCE</span><span>${balance.toFixed(2)}</span></div>
+          <div className="flex justify-between border-y-2 border-black py-1.5 mt-1 font-bold text-[12pt] bg-[hsl(38,40%,92%)] px-1"><span>BALANCE DUE</span><span>${balance.toFixed(2)}</span></div>
         </div>
       </div>
 
