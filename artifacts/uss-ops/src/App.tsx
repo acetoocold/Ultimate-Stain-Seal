@@ -46,7 +46,9 @@ function Placeholder({ title }: { title: string }) {
     <div className="flex-1 p-8 h-full flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-2xl font-bold">{title}</h1>
-        <p className="text-muted-foreground mt-2">This module is coming soon.</p>
+        <p className="text-muted-foreground mt-2">
+          This module is coming soon.
+        </p>
       </div>
     </div>
   );
@@ -58,15 +60,42 @@ function Router() {
       <Route path="/" component={() => <Redirect to="/ops/dashboard" />} />
 
       {/* Customer Portal Routes */}
-      <Route path="/customer/login" component={() => <Placeholder title="Customer Login" />} />
-      <Route path="/customer/register" component={() => <Placeholder title="Customer Register" />} />
-      <Route path="/customer/portal" component={() => <Placeholder title="Customer Portal" />} />
-      <Route path="/customer/projects" component={() => <Placeholder title="Customer Projects" />} />
-      <Route path="/customer/projects/:id" component={() => <Placeholder title="Customer Project Detail" />} />
-      <Route path="/customer/invoices" component={() => <Placeholder title="Customer Invoices" />} />
-      <Route path="/customer/invoices/:id" component={() => <Placeholder title="Customer Invoice Detail" />} />
-      <Route path="/customer/documents" component={() => <Placeholder title="Customer Documents" />} />
-      <Route path="/customer/profile" component={() => <Placeholder title="Customer Profile" />} />
+      <Route
+        path="/customer/login"
+        component={() => <Placeholder title="Customer Login" />}
+      />
+      <Route
+        path="/customer/register"
+        component={() => <Placeholder title="Customer Register" />}
+      />
+      <Route
+        path="/customer/portal"
+        component={() => <Placeholder title="Customer Portal" />}
+      />
+      <Route
+        path="/customer/projects"
+        component={() => <Placeholder title="Customer Projects" />}
+      />
+      <Route
+        path="/customer/projects/:id"
+        component={() => <Placeholder title="Customer Project Detail" />}
+      />
+      <Route
+        path="/customer/invoices"
+        component={() => <Placeholder title="Customer Invoices" />}
+      />
+      <Route
+        path="/customer/invoices/:id"
+        component={() => <Placeholder title="Customer Invoice Detail" />}
+      />
+      <Route
+        path="/customer/documents"
+        component={() => <Placeholder title="Customer Documents" />}
+      />
+      <Route
+        path="/customer/profile"
+        component={() => <Placeholder title="Customer Profile" />}
+      />
 
       {/* Employee/Admin Routes */}
       <Route path="/ops/login" component={OpsLogin} />
@@ -106,7 +135,10 @@ function Router() {
             <Route path="/ops/payments" component={PaymentsPage} />
 
             {/* Materials & Inventory */}
-            <Route path="/ops/materials/new" component={() => <Placeholder title="New Material" />} />
+            <Route
+              path="/ops/materials/new"
+              component={() => <Placeholder title="New Material" />}
+            />
             <Route path="/ops/materials" component={MaterialsPage} />
             <Route path="/ops/inventory" component={MaterialsPage} />
 
