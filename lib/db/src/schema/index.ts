@@ -14,3 +14,23 @@ export * from "./settings";
 export * from "./purchase-locations";
 export * from "./data-personalization";
 export * from "./invoice-message-templates";
+
+// Canon expansion: relational depth, action engine, role-based intelligence.
+export * from "./liabilities";
+export * from "./fixtures";
+export * from "./project-services";
+export * from "./prep-tasks";
+export * from "./tanks";
+export * from "./reminders";
+export * from "./referrals";
+export * from "./warranties";
+export * from "./qa-inspections";
+export * from "./territories";
+export * from "./crews";
+export * from "./approved-pricing-rates";
+export * from "./finish-history";
+export * from "./project-photos";
+export * from "./purchase-orders";
+export * from "./variance-events";
+export * from "./notifications";
+export * from "./compliance-documents";

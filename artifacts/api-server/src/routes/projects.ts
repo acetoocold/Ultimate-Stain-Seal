@@ -5,8 +5,18 @@ import {
   CreateProjectBody, UpdateProjectBody, GetProjectParams, UpdateProjectParams, DeleteProjectParams,
   UpdateProjectStatusParams, UpdateProjectStatusBody, ListProjectsQueryParams,
 } from "@workspace/api-zod";
+import { onProjectCompleted, recordProjectVariance } from "../lib/triggers";
 
 const router: IRouter = Router();
+
+// Trigger T1+T2 hook: fires when a project transitions into 'completed'.
+// Idempotent — onProjectCompleted skips if reminders/warranties already exist.
+async function fireCompletionTriggers(projectId: number): Promise<void> {
+  await Promise.all([
+    onProjectCompleted(projectId),
+    recordProjectVariance(projectId),
+  ]).catch(() => {/* Triggers are best-effort; don't fail the main response */});
+}
 
 function serializeProject(p: typeof projectsTable.$inferSelect) {
   return { ...p, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString(),
@@ -71,12 +81,20 @@ router.patch("/projects/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateProjectBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const [before] = await db.select().from(projectsTable).where(eq(projectsTable.id, params.data.id));
   const data: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(parsed.data)) { if (v !== null && v !== undefined) data[k] = v; }
   if (data.scheduledDate) data.scheduledDate = new Date(data.scheduledDate as string);
   if (data.completedDate) data.completedDate = new Date(data.completedDate as string);
+  // Auto-stamp completedDate when transitioning to 'completed' if caller omitted it.
+  if (data.status === "completed" && !data.completedDate && !before?.completedDate) {
+    data.completedDate = new Date();
+  }
   const [project] = await db.update(projectsTable).set(data).where(eq(projectsTable.id, params.data.id)).returning();
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+  if (project.status === "completed" && before?.status !== "completed") {
+    await fireCompletionTriggers(project.id);
+  }
   res.json(serializeProject(project));
 });
 
@@ -93,8 +111,16 @@ router.patch("/projects/:id/status", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const parsed = UpdateProjectStatusBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [project] = await db.update(projectsTable).set({ status: parsed.data.status }).where(eq(projectsTable.id, params.data.id)).returning();
+  const [before] = await db.select().from(projectsTable).where(eq(projectsTable.id, params.data.id));
+  const update: Record<string, unknown> = { status: parsed.data.status };
+  if (parsed.data.status === "completed" && !before?.completedDate) {
+    update.completedDate = new Date();
+  }
+  const [project] = await db.update(projectsTable).set(update).where(eq(projectsTable.id, params.data.id)).returning();
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+  if (project.status === "completed" && before?.status !== "completed") {
+    await fireCompletionTriggers(project.id);
+  }
   res.json(serializeProject(project));
 });
 
