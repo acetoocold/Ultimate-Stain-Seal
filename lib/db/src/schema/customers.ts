@@ -1,9 +1,9 @@
-import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const customersTable = pgTable("customers", {
-  id: serial("id").primaryKey(),
+export const customersTable = sqliteTable("customers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id"),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -15,9 +15,9 @@ export const customersTable = pgTable("customers", {
   leadSource: text("lead_source").notNull().default("other"),
   leadSourceDetail: text("lead_source_detail"),
   notes: text("notes"),
-  portalEnabled: boolean("portal_enabled").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  portalEnabled: integer("portal_enabled", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(new Date()),
 });
 
 export const insertCustomerSchema = createInsertSchema(customersTable).omit({ id: true, createdAt: true, updatedAt: true });

@@ -529,6 +529,7 @@ validateProjectCalculations(projectData): string[]
 ## VALIDATION CHECKLIST
 
 ### PHASE 1: Schema Integrity ✅
+
 - [x] jobsheets.ts - daysToComplete added, areasCompleted removed
 - [x] jobs.ts - extraHelpers added, crewSize/glideId removed
 - [x] materials.ts - liquidGoldColor, purchaseLocationId, productImage, activeStatus added
@@ -540,11 +541,13 @@ validateProjectCalculations(projectData): string[]
 - [x] schema/index.ts - All exports added
 
 ### PHASE 2: Type Safety ⏳
-- [ ] Run TypeScript compiler on all schema files
+
+- [ ] Run TypeScript compiler on all schema files (`npx tsc --noEmit`)
 - [ ] Verify Zod schema generation works
 - [ ] Test type inference in API routes
 
 ### PHASE 3: Calculation Validation ⏳
+
 - [ ] Unit test spray ratio calculations
 - [ ] Unit test health score calculations
 - [ ] Unit test window scheduling validation
@@ -553,12 +556,14 @@ validateProjectCalculations(projectData): string[]
 - [ ] Run comprehensive validation on sample project data
 
 ### PHASE 4: Database Migration ⏳
+
 - [ ] Create migration file for new tables
 - [ ] Create migration file for modified tables
 - [ ] Test migrations on dev database
 - [ ] Verify backward compatibility
 
 ### PHASE 5: API Integration ⏳
+
 - [ ] Update route handlers for spray calculations
 - [ ] Add endpoints for purchase_locations
 - [ ] Add endpoints for data_personalization_log
@@ -567,6 +572,7 @@ validateProjectCalculations(projectData): string[]
 - [ ] Implement digital signature validation
 
 ### PHASE 6: Frontend Integration ⏳
+
 - [ ] Add Window Scheduling UI components
 - [ ] Add Data Personalization visual indicators
 - [ ] Add Document Mode ↔ Data Mode toggle
@@ -575,6 +581,7 @@ validateProjectCalculations(projectData): string[]
 - [ ] Add purchase location map view
 
 ### PHASE 7: Business Logic ⏳
+
 - [ ] Implement two-person approval workflow for deletions
 - [ ] Implement Liquid Gold tank-only enforcement
 - [ ] Implement preservation counter on invoice completion
@@ -582,6 +589,7 @@ validateProjectCalculations(projectData): string[]
 - [ ] Test "wash" propagation up the hierarchy
 
 ### PHASE 8: End-to-End Testing ⏳
+
 - [ ] Create test project with all features
 - [ ] Verify all calculations stay in sync
 - [ ] Test window scheduling overlap prevention

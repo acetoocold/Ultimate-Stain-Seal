@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Stain Seal - Diagnosis Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .health-result {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #4caf50;
+        }
+        .health-status {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .urgent { color: #f44336; }
+        .warning { color: #ff9800; }
+        .good { color: #4caf50; }
+        .excellent { color: #2196f3; }
+        .calculate-btn {
+            background: #2196f3;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        .calculate-btn:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🩺 Ultimate Stain Seal - Fence Diagnosis Demo</h1>
+    <p>This demo shows how our health scoring system predicts when your fence needs re-staining.</p>
+
+    <div class="form-section">
+        <h2>🏠 Fence Information</h2>
+
+        <div class="form-group">
+            <label for="woodType">Wood Type:</label>
+            <select id="woodType">
+                <option value="fence">Fence (Privacy/Picket)</option>
+                <option value="pergola">Pergola</option>
+                <option value="deck">Deck</option>
+                <option value="dock">Dock</option>
+                <option value="siding">Siding</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="lastStained">Last Stained Year:</label>
+            <input type="number" id="lastStained" value="2021" min="2000" max="2026">
+        </div>
+
+        <div class="form-group">
+            <label for="currentFinish">Current Finish:</label>
+            <select id="currentFinish">
+                <option value="stain_and_sealed">Stain and Sealed (Healthy)</option>
+                <option value="weathered">Weathered (Normal)</option>
+                <option value="bare">Bare Wood (Needs Attention)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h2>🌤️ Environment</h2>
+
+        <div class="form-group">
+            <label for="weatherExposure">Weather Exposure:</label>
+            <select id="weatherExposure">
+                <option value="full_shade">Full Shade (Protected)</option>
+                <option value="partial_shade">Partial Shade</option>
+                <option value="full_sun">Full Sun (Harsh)</option>
+                <option value="near_water">Near Water (Very Harsh)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="moistureLevel">Moisture Level:</label>
+            <select id="moistureLevel">
+                <option value="dry">Dry (Healthy)</option>
+                <option value="normal">Normal</option>
+                <option value="high">High (Damp)</option>
+                <option value="water_logged">Water Logged (Severe)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h2>🔍 Condition Issues</h2>
+
+        <div class="form-group">
+            <label for="moldMildew">Mold/Mildew:</label>
+            <select id="moldMildew">
+                <option value="none">None (Good)</option>
+                <option value="low">Low (Minor)</option>
+                <option value="high">High (Severe)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="cracking">Cracking:</label>
+            <select id="cracking">
+                <option value="none">None (Good)</option>
+                <option value="low">Low (Minor)</option>
+                <option value="high">High (Severe)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="graying">Graying:</label>
+            <select id="graying">
+                <option value="none">None (Good)</option>
+                <option value="low">Low (Minor)</option>
+                <option value="high">High (Severe)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="repairNeeded">Repair Needed:</label>
+            <select id="repairNeeded">
+                <option value="none">None (Good)</option>
+                <option value="low">Low (Minor)</option>
+                <option value="high">High (Severe)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="postsCondition">Posts Condition:</label>
+            <select id="postsCondition">
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+                <option value="poor">Poor</option>
+                <option value="needs_repair">Needs Repair</option>
+            </select>
+        </div>
+    </div>
+
+    <button class="calculate-btn" onclick="calculateHealth()">🩺 Calculate Fence Health</button>
+
+    <div id="results" style="display: none;">
+        <div class="health-result">
+            <h2>📊 Diagnosis Results</h2>
+            <div id="healthStatus"></div>
+            <div id="nextService"></div>
+            <div id="recommendations"></div>
+        </div>
+    </div>
+
+    <script>
+        function calculateHealth() {
+            // Get form values
+            const woodType = document.getElementById('woodType').value;
+            const lastStained = parseInt(document.getElementById('lastStained').value);
+            const currentFinish = document.getElementById('currentFinish').value;
+            const weatherExposure = document.getElementById('weatherExposure').value;
+            const moistureLevel = document.getElementById('moistureLevel').value;
+            const moldMildew = document.getElementById('moldMildew').value;
+            const cracking = document.getElementById('cracking').value;
+            const graying = document.getElementById('graying').value;
+            const repairNeeded = document.getElementById('repairNeeded').value;
+            const postsCondition = document.getElementById('postsCondition').value;
+
+            // Base: 48 months (4 years)
+            let monthsRemaining = 48;
+
+            // Wood type deductions
+            const woodDeductions = {
+                fence: 3, pergola: 2, deck: 1, dock: 2, siding: 1
+            };
+            monthsRemaining -= woodDeductions[woodType] || 0;
+
+            // Current finish deductions
+            const finishDeductions = {
+                stain_and_sealed: 0, weathered: 1, bare: 3
+            };
+            monthsRemaining -= finishDeductions[currentFinish] || 0;
+
+            // Weather exposure deductions
+            const weatherDeductions = {
+                full_shade: 0, partial_shade: 1, full_sun: 3, near_water: 3
+            };
+            monthsRemaining -= weatherDeductions[weatherExposure] || 0;
+
+            // Moisture deductions
+            const moistureDeductions = {
+                dry: 0, normal: 1, high: 3, water_logged: 3
+            };
+            monthsRemaining -= moistureDeductions[moistureLevel] || 0;
+
+            // Condition issue deductions (3 points each for high, 1 for low)
+            const levelDeductions = { none: 0, low: 1, high: 3 };
+            monthsRemaining -= levelDeductions[moldMildew] || 0;
+            monthsRemaining -= levelDeductions[cracking] || 0;
+            monthsRemaining -= levelDeductions[graying] || 0;
+            monthsRemaining -= levelDeductions[repairNeeded] || 0;
+
+            // Posts condition deductions
+            const postsDeductions = {
+                excellent: 0, good: 1, fair: 1, poor: 3, needs_repair: 3
+            };
+            monthsRemaining -= postsDeductions[postsCondition] || 0;
+
+            // Calculate next service date
+            const lastStainedDate = new Date(lastStained, 0, 1);
+            const nextServiceDate = new Date(lastStainedDate);
+            nextServiceDate.setMonth(nextServiceDate.getMonth() + Math.max(0, monthsRemaining));
+
+            // Determine health status
+            const currentDate = new Date();
+            const monthsUntilService = (nextServiceDate.getFullYear() - currentDate.getFullYear()) * 12 +
+                                     (nextServiceDate.getMonth() - currentDate.getMonth());
+
+            let status, statusClass, statusText;
+            if (monthsUntilService <= 0) {
+                status = "🔴 Permanent Damage Risk";
+                statusClass = "urgent";
+                statusText = "URGENT: Your fence needs service NOW!";
+            } else if (monthsUntilService <= 6) {
+                status = "🟠 Needs Attention";
+                statusClass = "warning";
+                statusText = "Schedule service within 6 months";
+            } else if (monthsUntilService <= 24) {
+                status = "🟡 Good";
+                statusClass = "good";
+                statusText = "Monitor condition regularly";
+            } else {
+                status = "🟢 Ultimate Health";
+                statusClass = "excellent";
+                statusText = "Excellent condition - no immediate action needed";
+            }
+
+            // Display results
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('healthStatus').innerHTML =
+                `<div class="health-status ${statusClass}">${status}</div>
+                 <p><strong>Next Service Due:</strong> ${nextServiceDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</p>
+                 <p><strong>Time Until Service:</strong> ${monthsUntilService} months</p>`;
+
+            document.getElementById('nextService').innerHTML =
+                `<p><strong>Recommendation:</strong> ${statusText}</p>`;
+
+            document.getElementById('recommendations').innerHTML =
+                `<p><strong>Health Score:</strong> ${Math.max(0, monthsRemaining)} months remaining from baseline</p>
+                 <p><strong>Baseline:</strong> 48 months (4 years) from last staining</p>
+                 <p><strong>Deductions Applied:</strong> ${48 - Math.max(0, monthsRemaining)} months</p>`;
+        }
+    </script>
+</body>
+</html>
