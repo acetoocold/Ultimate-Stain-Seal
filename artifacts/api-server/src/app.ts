@@ -1,7 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -29,6 +28,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+// Avoid importing DB-backed routes when `SKIP_DB` is set to "true".
+// This allows starting the server for frontend development without a DB driver installed.
+if (process.env.SKIP_DB === "true") {
+  // Mount only a minimal health endpoint when DB is skipped so the server can start for frontend dev.
+  (async () => {
+    try {
+      const { default: healthRouter } = await import("./routes/health");
+      app.use("/api", healthRouter);
+    } catch (err) {
+      logger.warn({ err }, "Failed to load health route; mounting basic health responder");
+      app.use("/api", (_req, res) => res.status(200).json({ status: "ok" }));
+    }
+  })();
+} else {
+  // Import routes lazily to prevent top-level DB imports when skipped.
+  // Use top-level await so the module is loaded before handling requests.
+  (async () => {
+    const { default: router } = await import("./routes");
+    app.use("/api", router);
+  })().catch((err) => {
+    // If routes fail to load, log and mount a 500 responder so server still runs.
+    logger.error({ err }, "Failed to load routes");
+    app.use("/api", (_req, res) => res.status(500).json({ error: "Failed to initialize routes" }));
+  });
+}
 
 export default app;
