@@ -1,9 +1,14 @@
-import express, { type Express } from "express";
+declare module "express" {
+  const express: any;
+  export default express;
+}
+
+import express from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { logger } from "./lib/logger";
 
-const app: Express = express();
+const app = express();
 
 app.use(
   pinoHttp({
